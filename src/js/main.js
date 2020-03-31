@@ -89,7 +89,7 @@ import { LineGeometry } from './node_modules/three/examples/jsm/lines/LineGeomet
 import { LineMaterial } from './node_modules/three/examples/jsm/lines/LineMaterial.js';
 import { Line2 } from './node_modules/three/examples/jsm/lines/Line2.js';
 import { OrbitControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
-import { nelderMead } from './node_modules/fmin/src/nelderMead.js'
+// import { nelderMead } from './node_modules/fmin/src/nelderMead.js'
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
@@ -98,7 +98,7 @@ camera.position.z = 20;
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-var controls = new OrbitControls( camera, renderer.domElement );
+// var controls = new OrbitControls( camera, renderer.domElement );
 
 
 
@@ -140,6 +140,22 @@ function init() {
 
     window.addEventListener( 'resize', onWindowResize, false );
     onWindowResize();
+    window.addEventListener('keypress', manage_keypress);
+}
+
+function manage_keypress(e) {
+  if ( e.key === 'w') { camera.position.y -= 0.1; }
+  else if ( e.key === 'a') { camera.position.x += 0.1; }
+  else if ( e.key === 's') { camera.position.y += 0.1; }
+  else if ( e.key === 'd') { camera.position.x -= 0.1; }
+  else if ( e.key === 'q') { camera.position.z += 0.1; }
+  else if ( e.key === 'e') { camera.position.z -= 0.1; }
+  else if ( e.key === 'r') { camera.rotation.x += 0.01; }
+  else if ( e.key === 'f') { camera.rotation.x -= 0.01; }
+  else if ( e.key === 't') { camera.rotation.y += 0.01; }
+  else if ( e.key === 'g') { camera.rotation.y -= 0.01; }
+  else if ( e.key === 'y') { camera.rotation.z += 0.01; }
+  else if ( e.key === 'h') { camera.rotation.z -= 0.01; }
 }
 
 var animate = function () {

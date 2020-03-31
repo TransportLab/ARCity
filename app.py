@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os, time, errno, json, logging
-from flask import Flask, request
+import os, time, errno, json, logging, jsonify
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS, cross_origin
 from subprocess import call, Popen
 import numpy as np
@@ -10,23 +10,32 @@ import numpy as np
 app = Flask(__name__)
 logging.basicConfig(filename='flask_logfile.log',level=logging.DEBUG)
 CORS(app)
-kiosk = True
+# kiosk = True
 global corners
-
-#kiosk = False
+server_url = 'http://localhost:5000'
+kiosk = False
 if kiosk:
     kiosk_string = "--kiosk --disable-pinch --overscroll-history-navigation=0"
 else:
     kiosk_string = ""
 
 @app.route('/')
+def root():
+  return app.send_static_file('src/index.html')
 
-@app.route('/main', methods=['POST'])
+@app.route('/<path:path>')
+def static_proxy(path):
+    print(path)
+    # send_static_file will guess the correct MIME type
+    # return app.send_static_file(path)
+    return send_from_directory('./', path)
+
+
+@app.route('/main')
 def main():
-    chrome = Popen('/usr/bin/google-chrome ' + kiosk_string + '/index.html', shell=True)
+    chrome = Popen('/usr/bin/google-chrome ' + kiosk_string + server_url + '/src/index.html', shell=True)
     zed = Popen('/usr/bin/python3 src/read_zed.py', shell=True)
     return 'Up and running'
-
 
 @app.route('/post_corners_to_server', methods=['POST'])
 def send_corners_to_server():
@@ -44,13 +53,14 @@ def get_corners_to_server():
 @app.errorhandler(Exception)
 def unhandled_exception(e):
     app.logger.error('Unhandled exception: %s', (e))
-    return 'ERROR!'
+    return  e
 
 # TO RUN THIS CODE, DO THE FOLLOWING TWO STEPS:
 # FLASK_APP=server.py
 # flask run
 
-#if __name__ == '__main__':
-#app.run()
+if __name__ == '__main__':
+    app.run(debug=1)
+    # main()
 #    sleep(1)
 main()
