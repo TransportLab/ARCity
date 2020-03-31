@@ -23,8 +23,10 @@ import math
 import numpy as np
 import sys
 import cv2
+import requests
 
 debug_corners = False
+server_url = 'http://localhost:54321/'
 
 def order_points(pts):
     # initialzie a list of coordinates that will be ordered
@@ -69,11 +71,6 @@ def four_point_transform(image, pts):
     else:
         maxWidth = grid[0]
         maxHeight = grid[1]
-
-
-
-
-
 
     # now that we have the dimensions of the new image, construct
     # the set of destination points to obtain a "birds eye view",
@@ -198,6 +195,11 @@ def main():
     image = sl.Mat()
     depth = sl.Mat()
     corners = get_corners(zed,runtime_parameters,10)
+
+    # sending post request and saving response as response object
+    r = requests.post(url = server_url + '/post_corners_to_server', data = corners)
+    print("The server responded with: " + r.text)
+
     while True:
         # A new image is available if grab() returns SUCCESS
         if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:

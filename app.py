@@ -11,6 +11,7 @@ app = Flask(__name__)
 logging.basicConfig(filename='flask_logfile.log',level=logging.DEBUG)
 CORS(app)
 kiosk = True
+global corners
 
 #kiosk = False
 if kiosk:
@@ -29,12 +30,14 @@ def main():
 
 @app.route('/post_corners_to_server', methods=['POST'])
 def send_corners_to_server():
+    global corners
     corners = np.array(request.form['corners'])
     resp = Response(response='Received corners')
     return resp
 
 @app.route('/get_corners_from_server', methods=['GET'])
 def get_corners_to_server():
+    global corners
     return json.dumps(corners)
 
 
