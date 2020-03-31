@@ -15,9 +15,9 @@ global corners
 server_url = 'http://localhost:5000'
 kiosk = False
 if kiosk:
-    kiosk_string = "--kiosk --disable-pinch --overscroll-history-navigation=0"
+    kiosk_string = "--kiosk --disable-pinch --overscroll-history-navigation=0 --incognito"
 else:
-    kiosk_string = ""
+    kiosk_string = "--incognito" # incognito helps with caching
 
 @app.route('/')
 def root():
