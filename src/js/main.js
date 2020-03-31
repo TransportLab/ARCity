@@ -45,6 +45,7 @@ function add_line_marking_segment(pts) {
     // line.computeLineDistances();
     // scene.add( line );
 
+    // LINEGEOMETRY METHOD
     var geometry = new LineGeometry();
     geometry.setPositions( pts.flat() );
     var line = new Line2( geometry, line_material );
@@ -132,7 +133,7 @@ camera.position.z = 2*W;
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
-// var controls = new OrbitControls( camera, renderer.domElement );
+var controls = new OrbitControls( camera, renderer.domElement );
 
 var geometry = new THREE.PlaneGeometry( 2*W, 2*H);
 var base_material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
@@ -144,7 +145,7 @@ var road_material = new THREE.MeshBasicMaterial( {color: 0x000000, side: THREE.D
 
 var line_material = new LineMaterial( {
     color: 0xFFFFFF,
-    linewidth: 3, // in pixels??????
+    linewidth: 4, // in pixels??????
     // vertexColors: false,
     //resolution:  // to be set by renderer, eventually
     dashScale: 5,
