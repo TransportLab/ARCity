@@ -6,12 +6,15 @@ from flask import Flask, request, send_from_directory
 from flask_cors import CORS, cross_origin
 from subprocess import call, Popen
 import numpy as np
+import overpy # openstreetmap overpass API bindings
 
 app = Flask(__name__)
 logging.basicConfig(filename='flask_logfile.log',level=logging.DEBUG)
 CORS(app)
 # kiosk = True
 global corners
+global depths
+global colours
 server_url = 'http://localhost:5000'
 kiosk = False
 if kiosk:
@@ -46,9 +49,26 @@ def send_corners_to_server():
 
 @app.route('/get_corners_from_server', methods=['GET'])
 def get_corners_to_server():
-    global corners
+    # global corners
     return json.dumps(corners)
 
+@app.route('/post_depths_to_server', methods=['POST'])
+def get_depths_from_server():
+    global depths
+    depths = np.array(request.form['depths'])
+    resp = Response(response='Received depths')
+    return resp
+
+@app.route('/get_depths_from_server', methods=['GET'])
+def get_depths_from_server():
+    return json.dumps(depths)
+
+
+
+@app.route('/get_OSM_links')
+def get_OSM_links():
+    pass
+    # see testing_open_street_map.py for current progress
 
 @app.errorhandler(Exception)
 def unhandled_exception(e):

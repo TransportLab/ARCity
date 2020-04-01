@@ -31,7 +31,7 @@ function generate_regular_roads(W,H,R,B) {
     return links
 }
 
-function add_road_segment(scene,pts,R,road_material) {
+function add_road_segment(parent,pts,R,road_material) {
     var L = Math.abs(pts[1][0]-pts[0][0]) + 2*R;
     var H = Math.abs(pts[1][1]-pts[0][1]) + 2*R;
     // if (L > 0) { L += 2*R; }
@@ -41,7 +41,7 @@ function add_road_segment(scene,pts,R,road_material) {
     var road = new THREE.Mesh( geometry, road_material );
     road.position.x = (pts[1][0]+pts[0][0])/2.;
     road.position.y = (pts[1][1]+pts[0][1])/2.;
-    scene.add( road );
+    parent.add( road );
 
 
     // var geometry = new LineGeometry();
@@ -67,7 +67,7 @@ function add_road_segment(scene,pts,R,road_material) {
     // scene.add( line );
 }
 
-function add_line_marking_segment(scene,pts,line_material) {
+function add_line_marking_segment(parent,pts,line_material) {
     // WEBGL METHOD - only makes single pixel wide lines
     // var points = [];
     // points.push( new THREE.Vector3( pts[0][0], pts[0][1], pts[0][2] ) );
@@ -84,22 +84,45 @@ function add_line_marking_segment(scene,pts,line_material) {
     var line = new Line2( geometry, line_material );
     line.computeLineDistances();
     line.scale.set( 1, 1, 1 );
-    scene.add( line );
+    parent.add( line );
 }
 
-function add_road_network(scene,links,R,road_material,line_material) {
+function add_road_network(parent,links,R,road_material,line_material) {
     links.forEach(function(pts, index, array) {
-        add_road_segment(scene,pts,R,road_material);
+        add_road_segment(parent,pts,R,road_material);
     });
     links.forEach(function(pts, index, array) {
-        add_line_marking_segment(scene,pts,line_material);
+        add_line_marking_segment(parent,pts,line_material);
     });
 }
 
-function update_displacement_map(base_material) {
+function update_displacement_map(base_material,server_url,W,H) {
+    fetch(sever_url+'/get_depths').then(function(response) {
+      return response.json();
+    }).then(function(data) {
+      console.log(data);
+    }).catch(function() {
+      console.log("Booo");
+    });
     // could potentially add a displacement map to improve rendering fidelity of light/dark areas
-    base_material.displacementMap = new THREE.Texture(canvas);
-    base_material.displacementScale = 30;
+    var width = Math.floor(2*W);
+    var height = Math.floor(2*H);
+    var size = width * height;
+    var data = new Uint8Array( 3*size );
+    for ( var i = 0; i < size; i ++ ) {
+        data[ i*3+0 ] = Math.floor(Math.random()*255);
+        data[ i*3+1 ] = Math.floor(Math.random()*255);
+    	data[ i*3+2 ] = Math.floor(Math.random()*255);
+        // data[ i ] = Math.random();
+    }
+
+    // used the buffer to create a DataTexture
+
+    var texture = new THREE.DataTexture( data, width, height, THREE.RGBFormat );
+
+    base_material.displacementMap = texture;
+    base_material.displacementScale = 1;
+    base_material.needsUpdate = true;
 }
 
 export { add_road_network, generate_regular_roads, update_displacement_map };
