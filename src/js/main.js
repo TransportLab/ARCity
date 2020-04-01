@@ -9,6 +9,7 @@ var W = 25/2. // half width in LEGO studs (x direction)
 var H = 25/2. // half height in LEGO studs (y direction)
 var road_width = 2/2 // width of roads in studs
 var block_length = 4 // one block is 4 LEGO studs
+var server_url = 'http://localhost:54321'
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
@@ -62,7 +63,7 @@ function animate(now) {
     if(!last || now - last >= 3000) { // every 5 seconds
         last = now;
         // on new heights from server:
-        ROADS.update_displacement_map(base_material,W,H);
+        ROADS.update_displacement_map(base_material,server_url,W,H);
 
         console.log('hi')
     }

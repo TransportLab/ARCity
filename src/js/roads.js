@@ -97,32 +97,36 @@ function add_road_network(parent,links,R,road_material,line_material) {
 }
 
 function update_displacement_map(base_material,server_url,W,H) {
-    fetch(sever_url+'/get_depths').then(function(response) {
+    // var width = Math.floor(2*W);
+    // var height = Math.floor(2*H);
+    // var size = width * height;
+    // var arr = new Uint8Array( 3*size );
+    // for ( var i = 0; i < size; i ++ ) {
+    //     arr[ i*3+0 ] = Math.floor(Math.random()*255); // just red channel
+    // }
+    // var texture = new THREE.DataTexture( arr, width, height, THREE.RGBFormat );
+    // base_material.displacementMap = texture;
+    // base_material.displacementScale = 1;
+    // base_material.needsUpdate = true;
+
+    var scale = 10. // to get height in stud widths (threejs in units of stud witdth)
+    fetch(server_url+'/get_depths').then(function(response) {
       return response.json();
     }).then(function(data) {
-      console.log(data);
+        data = data.flat();
+        var arr = new Uint8Array( 3*length(data) );
+        for ( var i = 0; i < size; i ++ ) {
+            arr[ i*3 ] = Math.floor(scale*data); // just red channel
+        }
+
+        var texture = new THREE.DataTexture( arr, width, height, THREE.RGBFormat );
+
+        base_material.displacementMap = texture;
+        base_material.displacementScale = 1;
+        base_material.needsUpdate = true;
     }).catch(function() {
-      console.log("Booo");
+      console.log("Failed to get depths from server");
     });
-    // could potentially add a displacement map to improve rendering fidelity of light/dark areas
-    var width = Math.floor(2*W);
-    var height = Math.floor(2*H);
-    var size = width * height;
-    var data = new Uint8Array( 3*size );
-    for ( var i = 0; i < size; i ++ ) {
-        data[ i*3+0 ] = Math.floor(Math.random()*255);
-        data[ i*3+1 ] = Math.floor(Math.random()*255);
-    	data[ i*3+2 ] = Math.floor(Math.random()*255);
-        // data[ i ] = Math.random();
-    }
-
-    // used the buffer to create a DataTexture
-
-    var texture = new THREE.DataTexture( data, width, height, THREE.RGBFormat );
-
-    base_material.displacementMap = texture;
-    base_material.displacementScale = 1;
-    base_material.needsUpdate = true;
 }
 
 export { add_road_network, generate_regular_roads, update_displacement_map };
