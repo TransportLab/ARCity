@@ -8,18 +8,18 @@ function generate_regular_roads(W,H,R,B) {
     // H = 25 // half height in LEGO studs (y direction)
     // R = 1 // half width of roads in studs
     // B = 4 // one block is 4 LEGO studs
-
+    var z = 0.1;// small offset to help in general
     var links = [];
-    links.push([[-W+R, H-R,0],[ W-R, H-R,0]]); // top boundary
-    links.push([[-W+R,-H+R,0],[ W-R,-H+R,0]]); // bottom boundary
-    links.push([[-W+R,-H+R,0],[-W+R, H-R,0]]); // left boundary
-    links.push([[ W-R,-H+R,0],[ W-R, H-R,0]]); // right boundary
+    links.push([[-W+R, H-R,z],[ W-R, H-R,z]]); // top boundary
+    links.push([[-W+R,-H+R,z],[ W-R,-H+R,z]]); // bottom boundary
+    links.push([[-W+R,-H+R,z],[-W+R, H-R,z]]); // left boundary
+    links.push([[ W-R,-H+R,z],[ W-R, H-R,z]]); // right boundary
 
     for ( var i=-W+B+3*R;i<W-R;i+=B+2*R ) {
-        links.push([[i, H-R,0],[i,-H+R,0]]); // vertical roads
+        links.push([[i, H-R,z],[i,-H+R,z]]); // vertical roads
     }
     for ( var i=-H+B+3*R;i<H-R;i+=B+2*R ) {
-        links.push([[W-R,i,0],[-W+R,i,0]]); // horizontal roads
+        links.push([[W-R,i,z],[-W+R,i,z]]); // horizontal roads
     }
     // var links = [[[-12,-12,0],[-12, 12,0]],
     //              [[-12,-12,0],[ 12,-12,0]],
@@ -41,6 +41,7 @@ function add_road_segment(parent,pts,R,road_material) {
     var road = new THREE.Mesh( geometry, road_material );
     road.position.x = (pts[1][0]+pts[0][0])/2.;
     road.position.y = (pts[1][1]+pts[0][1])/2.;
+    road.position.z = pts[1][2];
     parent.add( road );
 
 
@@ -97,8 +98,8 @@ function add_road_network(parent,links,R,road_material,line_material) {
 }
 
 function update_displacement_map(base_material,server_url,W,H) {
-    // var width = Math.floor(2*W);
-    // var height = Math.floor(2*H);
+    var width = Math.floor(2*W);
+    var height = Math.floor(2*H);
     // var size = width * height;
     // var arr = new Uint8Array( 3*size );
     // for ( var i = 0; i < size; i ++ ) {
@@ -110,12 +111,12 @@ function update_displacement_map(base_material,server_url,W,H) {
     // base_material.needsUpdate = true;
 
     var scale = 10. // to get height in stud widths (threejs in units of stud witdth)
-    fetch(server_url+'/get_depths').then(function(response) {
-      return response.json();
-    }).then(function(data) {
-        data = data.flat();
-        var arr = new Uint8Array( 3*length(data) );
-        for ( var i = 0; i < size; i ++ ) {
+    fetch(server_url+'/get_depths_from_server')
+    .then( function(response) { return response.json(); })
+    .then( function(data) {
+        console.log(data);
+        var arr = new Uint8Array( 3*data.length );
+        for ( var i = 0; i < data.length; i ++ ) {
             arr[ i*3 ] = Math.floor(scale*data); // just red channel
         }
 
@@ -124,7 +125,9 @@ function update_displacement_map(base_material,server_url,W,H) {
         base_material.displacementMap = texture;
         base_material.displacementScale = 1;
         base_material.needsUpdate = true;
-    }).catch(function() {
+    })
+    .catch(function(e) {
+      console.log(e)
       console.log("Failed to get depths from server");
     });
 }

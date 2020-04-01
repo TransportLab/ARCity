@@ -12,19 +12,19 @@ app = Flask(__name__)
 logging.basicConfig(filename='flask_logfile.log',level=logging.DEBUG)
 CORS(app)
 # kiosk = True
-global corners
-global depths
-global colours
+#depths = np.zeros([25,25])
 server_url = 'http://localhost:5000'
 kiosk = False
 if kiosk:
-    kiosk_string = "--kiosk --disable-pinch --overscroll-history-navigation=0 --incognito"
+    kiosk_string = "--kiosk --disable-pinch --overscroll-history-navigation=0"
 else:
-    kiosk_string = "--incognito" # incognito helps with caching
+    kiosk_string = "" #"--incognito" # incognito helps with caching
+
+import read_zed
 
 @app.route('/')
-def root():
-  return app.send_static_file('src/index.html')
+# def root():
+  # return app.send_static_file('src/index.html')
 
 @app.route('/<path:path>')
 def static_proxy(path):
@@ -34,34 +34,35 @@ def static_proxy(path):
     return send_from_directory('./', path)
 
 
-@app.route('/main')
-def main():
-    chrome = Popen('/usr/bin/google-chrome ' + kiosk_string + server_url + '/src/index.html', shell=True)
-    zed = Popen('/usr/bin/python3 src/read_zed.py', shell=True)
-    return 'Up and running'
+#@app.route('/main')
+#def main():
+#    return 'Up and running'
 
 @app.route('/post_corners_to_server', methods=['POST'])
-def send_corners_to_server():
+def post_corners_to_server():
     global corners
     corners = np.array(request.form['corners'])
-    resp = Response(response='Received corners')
-    return resp
+    #resp = Response(response='Received corners')
+    return 'Received corners'
 
 @app.route('/get_corners_from_server', methods=['GET'])
 def get_corners_to_server():
     # global corners
     return json.dumps(corners)
 
-@app.route('/post_depths_to_server', methods=['POST'])
-def get_depths_from_server():
+@app.route('/post_zed_data_to_server', methods=['POST'])
+def post_zed_data_to_server():
+    global colours
     global depths
+    colours = np.array(request.form['colours'])
     depths = np.array(request.form['depths'])
-    resp = Response(response='Received depths')
-    return resp
+    return 'Received colours and depths'
 
 @app.route('/get_depths_from_server', methods=['GET'])
 def get_depths_from_server():
-    return json.dumps(depths)
+    global depths
+    # print(depths)
+    return json.dumps(depths.flatten().tolist())
 
 
 
@@ -76,11 +77,35 @@ def unhandled_exception(e):
     return  e
 
 # TO RUN THIS CODE, DO THE FOLLOWING TWO STEPS:
-# FLASK_APP=server.py
+# FLASK_APP=app.py
 # flask run
 
-if __name__ == '__main__':
-    app.run(debug=1)
+# if __name__ == '__main__':
+    # app.run(debug=1)
     # main()
 #    sleep(1)
-main()
+#main()
+
+chrome = Popen('/usr/bin/google-chrome ' + kiosk_string + server_url + '/src/index.html', shell=True)
+#zed = Popen('/usr/bin/python3 src/read_zed.py', shell=True)
+zed,runtime_parameters = read_zed.initialise_camera()
+# grid = [25,25] # how many lego studs are available in horizontal and vertical direction
+grid = 'native' # get the best image possible
+
+image = sl.Mat()
+depth = sl.Mat()
+try:
+    corners = get_corners(zed,runtime_parameters,10)
+except Exception as e:
+    print('Failed to find corners, quitting gracefully. Got the exception:')
+    print(e)
+    zed.close()
+    exit(1)
+# sending post request and saving response as response object
+r = requests.post(url = server_url + '/post_corners_to_server', data = { 'corners': json.dumps(corners.tolist()) })
+print("The server responded with: " + r.text)
+
+while True:
+
+# Close the camera
+zed.close()

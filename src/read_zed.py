@@ -21,12 +21,15 @@
 import pyzed.sl as sl
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 import sys
 import cv2
 import requests
+import json
 
-debug_corners = False
-server_url = 'http://localhost:54321/'
+# debug_corners = False
+debug_corners = True
+server_url = 'http://localhost:5000/'
 
 def order_points(pts):
     # initialzie a list of coordinates that will be ordered
@@ -48,7 +51,7 @@ def order_points(pts):
     # return the ordered coordinates
     return rect
 
-def four_point_transform(image, pts):
+def four_point_transform(image, pts, grid):
     # obtain a consistent order of the points and unpack them
     # individually
     rect = order_points(pts)
@@ -103,12 +106,16 @@ def get_corners(zed,runtime_parameters,N):
             #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
             im = image.get_data()
-
+            if debug_corners:
+                # cv2.imshow('frame',im)
+                # if cv2.waitKey(1) & 0xFF == ord('q'):
+                    # break
+                plt.imsave('frame.png',im)
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
 
             # define range of corner color in HSV (currently ORANGE for some reason)
-            lower_orange = np.array([12,120,100])
-            upper_orange = np.array([20,255,200])
+            lower_orange = np.array([15,200,100])
+            upper_orange = np.array([20,255,255])
 
             # Threshold the HSV image to get only orange colors
             mask = cv2.inRange(hsv, lower_orange, upper_orange)
@@ -120,6 +127,7 @@ def get_corners(zed,runtime_parameters,N):
             cnts = sorted(contours, key=cv2.contourArea)
 
             these_corners = np.zeros([4,2])
+            print('Found ' + str(len(cnts)) + ' possible corners')
             for j in range(4):
                 cnt = cnts[-1-j]
                 M = cv2.moments(cnt)
@@ -166,9 +174,9 @@ def get_corners(zed,runtime_parameters,N):
 
 def get_lego_bricks(image,depths,pts,grid):
     colour = four_point_transform(image.get_data(), pts, grid)
-    depths = four_point_transform(depth.get_data(), pts, grid)
+    depths = four_point_transform(depths.get_data(), pts, grid)
 
-def main():
+def initialise_camera():
     zed = sl.Camera() # Create a Camera object
 
     init_params = sl.InitParameters()
@@ -181,6 +189,7 @@ def main():
 
     if err != sl.ERROR_CODE.SUCCESS:
         exit(1)
+    else: print('Zed camera is alive')
 
     runtime_parameters = sl.RuntimeParameters()
     # runtime_parameters.sensing_mode = sl.SENSING_MODE.STANDARD  # Use STANDARD sensing mode
@@ -189,36 +198,65 @@ def main():
     runtime_parameters.confidence_threshold = 100 # NOT SURE WHAT THIS DOES
     runtime_parameters.textureness_confidence_threshold = 100 # NOT SURE WHAT THIS DOES
 
+    return zed, runtime_parameters
+
+def get_zed_frame(image,depth):
+    # A new image is available if grab() returns SUCCESS
+    if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
+        # Retrieve left image
+        zed.retrieve_image(image, sl.VIEW.LEFT)
+        # Retrieve depth map. Depth is aligned on the left image
+        zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
+        # Retrieve colored point cloud. Point cloud is aligned on the left image.
+        #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+        try:
+            colours,heights = get_lego_bricks(image,depth,corners,grid)
+        except:
+            print('Failed to find lego bricks')
+            print(sys.exc_info()[0])
+            zed.close()
+            exit(1)
+        # r = requests.post(url = server_url + '/post_zed_data_to_server', data = {'depths': json.dumps(heights.tolist()),'colours': json.dumps(colours.tolist()) })
+        # print("The server responded with: " + r.text)
+
+        if debug_lego_bricks:
+            d = cv2.normalize(heights, None, 255,0, cv2.NORM_MINMAX, cv2.CV_8UC1) # just for visualisation
+            # print(depths)}
+            cv2.imshow("Heights", d)
+            cv2.imshow("Colours", colours)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                # break
+                exit(1)
+        return colours, heights
+    else:
+        print('ZED CAMERA FAILED TO GET A FRAME')
+        return -1, -1
+
+
+def main():
+    zed, runtime_parameters = initialise_camera()
+
     # grid = [25,25] # how many lego studs are available in horizontal and vertical direction
     grid = 'native' # get the best image possible
 
     image = sl.Mat()
     depth = sl.Mat()
-    corners = get_corners(zed,runtime_parameters,10)
 
+    try:
+        corners = get_corners(zed,runtime_parameters,10)
+    except Exception as e:
+        print('Failed to find corners, quitting gracefully. Got the exception:')
+        print(e)
+        zed.close()
+        exit(1)
     # sending post request and saving response as response object
-    r = requests.post(url = server_url + '/post_corners_to_server', data = corners)
-    print("The server responded with: " + r.text)
+    # r = requests.post(url = server_url + '/post_corners_to_server', data = { 'corners': json.dumps(corners.tolist()) })
+    # print("The server responded with: " + r.text)
 
     while True:
-        # A new image is available if grab() returns SUCCESS
-        if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
-            # Retrieve left image
-            zed.retrieve_image(image, sl.VIEW.LEFT)
-            # Retrieve depth map. Depth is aligned on the left image
-            zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
-            # Retrieve colored point cloud. Point cloud is aligned on the left image.
-            #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
-            colours,heights = get_lego_bricks(image,depth,corners,grid)
-
-            if debug_lego_bricks:
-                d = cv2.normalize(heights, None, 255,0, cv2.NORM_MINMAX, cv2.CV_8UC1) # just for visualisation
-                # print(depths)}
-                cv2.imshow("Heights", d)
-                cv2.imshow("Colours", colours)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+        heights, colours = get_zed_frame(image,depth)
     # Close the camera
     zed.close()
+
 if __name__ == "__main__":
     main()

@@ -9,7 +9,7 @@ var W = 25/2. // half width in LEGO studs (x direction)
 var H = 25/2. // half height in LEGO studs (y direction)
 var road_width = 2/2 // width of roads in studs
 var block_length = 4 // one block is 4 LEGO studs
-var server_url = 'http://localhost:54321'
+var server_url = 'http://localhost:5000'
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
