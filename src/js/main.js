@@ -4,6 +4,7 @@ import { OrbitControls } from './node_modules/three/examples/jsm/controls/OrbitC
 // import { nelderMead } from './node_modules/fmin/src/nelderMead.js'
 import * as ROADS from './roads.js';
 import { manage_keypress } from './calibrate.js'
+import * as MODELS from './models.js';
 
 var W = 25/2. // half width in LEGO studs (x direction)
 var H = 25/2. // half height in LEGO studs (y direction)
@@ -54,6 +55,9 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
     onWindowResize();
     window.addEventListener('keypress', function(e) { manage_keypress(camera,e) });
+
+    // MODELS.add_model('blue-jeep/Jeep.gltf',[0,0,0],[Math.PI/2.,0,0],0.1,scene)
+    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[0,2,0],[Math.PI/2.,0,0],0.02,scene)
 }
 var last = 0 ;
 function animate(now) {
@@ -63,7 +67,7 @@ function animate(now) {
     if(!last || now - last >= 3000) { // every 5 seconds
         last = now;
         // on new heights from server:
-        ROADS.update_displacement_map(base_material,server_url,W,H);
+        // ROADS.update_displacement_map(base_material,server_url,W,H);
 
         console.log('hi')
     }
