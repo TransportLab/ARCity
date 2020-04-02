@@ -42,6 +42,7 @@ function add_road_segment(parent,pts,R,road_material) {
     road.position.x = (pts[1][0]+pts[0][0])/2.;
     road.position.y = (pts[1][1]+pts[0][1])/2.;
     road.position.z = pts[1][2];
+    road.receiveShadow = true;
     parent.add( road );
 
 
@@ -132,4 +133,49 @@ function update_displacement_map(base_material,server_url,W,H) {
     });
 }
 
-export { add_road_network, generate_regular_roads, update_displacement_map };
+function fake_update_displacement_map(base_material,server_url,W,H) {
+    var width = Math.floor(2*W);
+    var height = Math.floor(2*H);
+
+    var scale = 255*(9.6/8.0) // to get height in stud widths (threejs in units of stud witdth)
+    var data;
+    data = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,2,2,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,2,2,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,3,3,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,3,3,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,3,3,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,3,3,1,1,0,0,2,2,2,2,0,0,3,3,3,3,0,0,4,4,4,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
+
+    data = data.reverse().flat()
+    var arr = new Uint8Array( 3*data.length );
+    for ( var i = 0; i < data.length; i ++ ) {
+        arr[ i*3 ] = data[i]; // just red channel
+    }
+
+    var texture = new THREE.DataTexture( arr, width, height, THREE.RGBFormat );
+
+    base_material.displacementMap = texture;
+    base_material.displacementScale = scale;
+    base_material.needsUpdate = true;
+}
+
+export { add_road_network, generate_regular_roads, update_displacement_map, fake_update_displacement_map };

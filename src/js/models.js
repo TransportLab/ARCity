@@ -4,6 +4,9 @@ import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader
 function add_model(file,loc,rot,scale,parent) {
     new GLTFLoader()
     .load( '../models/' + file, function ( gltf ) {
+        gltf.scene.traverse( function( node ) {
+            if ( node.isMesh ) { node.castShadow = true; }
+        } );
         var mesh = gltf.scene;
         // earth.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -27., 0 ) );
         mesh.scale.set(scale,scale,scale);
@@ -11,6 +14,8 @@ function add_model(file,loc,rot,scale,parent) {
         mesh.rotateY(rot[1]);
         mesh.rotateZ(rot[2]);
         mesh.position.set(loc[0],loc[1],loc[2]);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
         // console.log(rot)
         // console.log(mesh.rotation)
         parent.add( mesh );
