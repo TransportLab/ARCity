@@ -11,8 +11,8 @@ function add_model(file,loc,rot,scale,parent) {
         mesh.rotateY(rot[1]);
         mesh.rotateZ(rot[2]);
         mesh.position.set(loc[0],loc[1],loc[2]);
-        console.log(rot)
-        console.log(mesh.rotation)
+        // console.log(rot)
+        // console.log(mesh.rotation)
         parent.add( mesh );
 
        }

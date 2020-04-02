@@ -56,8 +56,8 @@ function init() {
     onWindowResize();
     window.addEventListener('keypress', function(e) { manage_keypress(camera,e) });
 
-    // MODELS.add_model('blue-jeep/Jeep.gltf',[0,0,0],[Math.PI/2.,0,0],0.1,scene)
-    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[0,2,0],[Math.PI/2.,0,0],0.02,scene)
+    MODELS.add_model('blue-jeep/Jeep.gltf',[1,-1,0],[Math.PI/2.,0,0],0.05,scene)
+    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[1,2,0],[Math.PI/2.,0,0],0.01,scene)
 }
 var last = 0 ;
 function animate(now) {
