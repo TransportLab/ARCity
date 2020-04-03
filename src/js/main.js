@@ -28,7 +28,7 @@ var fov_vertical = 2*Math.atan(projector_aspect_ratio/projector_throw_ratio/2.)*
 console.log(fov_vertical)
 var camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
 camera.position.z = projector_plane_distance_studs;
-
+camera.position.y = -projector_plane_distance_studs/projector_throw_ratio/projector_aspect_ratio; // vertical offset`
 // var ambient_light = new THREE.AmbientLight( 0xFFFFFF ); // white light
 // scene.add( ambient_light );
 var sunGeometry = new THREE.SphereBufferGeometry( 0.1 ); // radius
@@ -56,7 +56,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.gammaOutput = true;
 renderer.gammaFactor = 2.2;
 document.body.appendChild( renderer.domElement );
-// var controls = new OrbitControls( camera, renderer.domElement );
+var controls = new OrbitControls( camera, renderer.domElement );
 
 var geometry = new THREE.PlaneGeometry( 2*W, 2*H,Math.floor(2*W*10),Math.floor(2*H*10));
 var base_material = new THREE.MeshStandardMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide} );
@@ -103,15 +103,15 @@ function animate(now) {
     if(!last || now - last >= 1000) { // every 5 seconds
         last = now;
         // on new heights from server:
-        ROADS.update_displacement_map(base_material,server_url,W,H);
-        // ROADS.fake_update_displacement_map(base_material,server_url,W,H);
+        // ROADS.update_displacement_map(base_material,server_url,W,H);
+        ROADS.fake_update_displacement_map(base_material,server_url,W,H);
     }
     var T = 50; // period of rotation of sun
     sun.position.x = 2*W*Math.sin(clock.getElapsedTime()*2.*Math.PI/T);
     sun.position.z = 2*W*Math.cos(clock.getElapsedTime()*2.*Math.PI/T);
     // console.log(sun.rotation)
 
-    var speed = 1; // vehicle speed
+    var speed = 1000; // vehicle speed
     cars.forEach( function(car, index) {
         car.position.y -= speed*clock.getDelta();
     });

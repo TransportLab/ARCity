@@ -178,7 +178,7 @@ def get_warped_data(image,depths,pts,grid,colour,height):
     new_colour = four_point_transform(image.get_data(), pts, grid)
     new_height = four_point_transform(depths.get_data(), pts, grid)
 
-    alpha = 0.9
+    alpha = 0.7
     colour = alpha*colour + (1-alpha)*new_colour
     height = alpha*height + (1-alpha)*new_height
 
