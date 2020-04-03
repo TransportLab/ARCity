@@ -20,7 +20,7 @@ if kiosk:
 else:
     kiosk_string = "" #"--incognito" # incognito helps with caching
 
-import read_zed
+#import read_zed
 
 @app.route('/')
 # def root():
@@ -54,15 +54,15 @@ def get_corners_to_server():
 def post_zed_data_to_server():
     global colours
     global depths
-    colours = np.array(request.form['colours'])
-    depths = np.array(request.form['depths'])
+    colours = json.loads(request.form['colours'])
+    depths = json.loads(request.form['depths'])
+    # print(depths)
     return 'Received colours and depths'
 
 @app.route('/get_depths_from_server', methods=['GET'])
 def get_depths_from_server():
     global depths
-    # print(depths)
-    return json.dumps(depths.flatten().tolist())
+    return json.dumps(depths)
 
 
 
@@ -86,26 +86,5 @@ def unhandled_exception(e):
 #    sleep(1)
 #main()
 
-chrome = Popen('/usr/bin/google-chrome ' + kiosk_string + server_url + '/src/index.html', shell=True)
+#chrome = Popen('/usr/bin/google-chrome ' + kiosk_string + server_url + '/src/index.html', shell=True)
 #zed = Popen('/usr/bin/python3 src/read_zed.py', shell=True)
-zed,runtime_parameters = read_zed.initialise_camera()
-# grid = [25,25] # how many lego studs are available in horizontal and vertical direction
-grid = 'native' # get the best image possible
-
-image = sl.Mat()
-depth = sl.Mat()
-try:
-    corners = get_corners(zed,runtime_parameters,10)
-except Exception as e:
-    print('Failed to find corners, quitting gracefully. Got the exception:')
-    print(e)
-    zed.close()
-    exit(1)
-# sending post request and saving response as response object
-r = requests.post(url = server_url + '/post_corners_to_server', data = { 'corners': json.dumps(corners.tolist()) })
-print("The server responded with: " + r.text)
-
-while True:
-
-# Close the camera
-zed.close()

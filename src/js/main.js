@@ -10,10 +10,10 @@ import * as MODELS from './models.js';
 // 8.0 mm - horizontal spacing from centre of one stud to another
 // 9.6 mm - vertical height of regular brick
 var mm_per_stud = 8.0; // JUST IN HORIZONTAL DIRECTION
-var projector_throw_ratio = 0.5; // width of projected area / distance to
-var projector_plane_distance_mm = 1000.0; // distance in mm
+var projector_throw_ratio = 2.0; // width of projected area / distance to
+var projector_plane_distance_mm = 950.0; // distance in mm
 var projector_plane_distance_studs = projector_plane_distance_mm/mm_per_stud; // distance in mm
-
+var projector_aspect_ratio = 16./9.
 
 var W = 25/2. // half width in LEGO studs (x direction)
 var H = 25/2. // half height in LEGO studs (y direction)
@@ -24,7 +24,7 @@ var server_url = 'http://localhost:5000'
 var clock = new THREE.Clock();
 var scene = new THREE.Scene();
 // var camera = new THREE.PerspectiveCamera( 50, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
-var fov_vertical = 2*Math.atan(9./16.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
+var fov_vertical = 2*Math.atan(projector_aspect_ratio/projector_throw_ratio/2.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
 console.log(fov_vertical)
 var camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
 camera.position.z = projector_plane_distance_studs;
@@ -53,8 +53,10 @@ var renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.gammaOutput = true;
+renderer.gammaFactor = 2.2;
 document.body.appendChild( renderer.domElement );
-var controls = new OrbitControls( camera, renderer.domElement );
+// var controls = new OrbitControls( camera, renderer.domElement );
 
 var geometry = new THREE.PlaneGeometry( 2*W, 2*H,Math.floor(2*W*10),Math.floor(2*H*10));
 var base_material = new THREE.MeshStandardMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide} );
@@ -64,11 +66,11 @@ base_plane.castShadow = true;
 scene.add( base_plane );
 base_plane.position.z = -0.1;
 
-var road_material = new THREE.MeshStandardMaterial( {color: 0x111111});//, side: THREE.DoubleSide} );
+var road_material = new THREE.MeshStandardMaterial( {color: 0x000000});//, side: THREE.DoubleSide} );
 
 var line_material = new LineMaterial( {
     color: 0xFFFFFF,
-    linewidth: 4, // in pixels??????
+    linewidth: 2, // in pixels??????
     dashScale: 5,
     gapSize: 3,
     dashSize: 4
@@ -78,7 +80,8 @@ line_material.defines.USE_DASH = ""; // enables dashing
 var links = ROADS.generate_regular_roads(W,H,road_width,block_length)
 
 // locate_domain()
-
+var cars = [];
+var last = 0 ;
 scene.background = new THREE.Color( 0x000000 );
 init();
 
@@ -89,25 +92,32 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
     onWindowResize();
     window.addEventListener('keypress', function(e) { manage_keypress(camera,e) });
-
-    MODELS.add_model('blue-jeep/Jeep.gltf',[1,-1,0],[Math.PI/2.,0,0],0.05,scene)
-    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[1,2,0],[Math.PI/2.,0,0],0.01,scene)
+    MODELS.add_model('blue-jeep/Jeep.gltf',[1,-1,0],[Math.PI/2.,0,0],0.05,scene,cars);
+    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[1,2,0],[Math.PI/2.,0,0],0.01,scene,cars);
 }
-var last = 0 ;
+
 function animate(now) {
     requestAnimationFrame( animate );
     line_material.resolution.set( window.innerWidth, window.innerHeight ); // resolution of the viewport
 
-    if(!last || now - last >= 3000) { // every 5 seconds
+    if(!last || now - last >= 1000) { // every 5 seconds
         last = now;
         // on new heights from server:
-        // ROADS.update_displacement_map(base_material,server_url,W,H);
-        ROADS.fake_update_displacement_map(base_material,server_url,W,H);
+        ROADS.update_displacement_map(base_material,server_url,W,H);
+        // ROADS.fake_update_displacement_map(base_material,server_url,W,H);
     }
     var T = 50; // period of rotation of sun
     sun.position.x = 2*W*Math.sin(clock.getElapsedTime()*2.*Math.PI/T);
     sun.position.z = 2*W*Math.cos(clock.getElapsedTime()*2.*Math.PI/T);
     // console.log(sun.rotation)
+
+    var speed = 1; // vehicle speed
+    cars.forEach( function(car, index) {
+        car.position.y -= speed*clock.getDelta();
+    });
+    // console.log(cars);
+
+
     renderer.render( scene, camera );
 };
 

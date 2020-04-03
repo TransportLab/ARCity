@@ -8,7 +8,7 @@ function generate_regular_roads(W,H,R,B) {
     // H = 25 // half height in LEGO studs (y direction)
     // R = 1 // half width of roads in studs
     // B = 4 // one block is 4 LEGO studs
-    var z = 0.1;// small offset to help in general
+    var z = 0.5;// small offset to help in general
     var links = [];
     links.push([[-W+R, H-R,z],[ W-R, H-R,z]]); // top boundary
     links.push([[-W+R,-H+R,z],[ W-R,-H+R,z]]); // bottom boundary
@@ -41,7 +41,7 @@ function add_road_segment(parent,pts,R,road_material) {
     var road = new THREE.Mesh( geometry, road_material );
     road.position.x = (pts[1][0]+pts[0][0])/2.;
     road.position.y = (pts[1][1]+pts[0][1])/2.;
-    road.position.z = pts[1][2];
+    road.position.z = pts[1][2]/2.; // just half the offset
     road.receiveShadow = true;
     parent.add( road );
 
@@ -111,20 +111,31 @@ function update_displacement_map(base_material,server_url,W,H) {
     // base_material.displacementScale = 1;
     // base_material.needsUpdate = true;
 
-    var scale = 10. // to get height in stud widths (threejs in units of stud witdth)
+    var scale = 9.6/8.; // to get height in stud widths (threejs in units of stud witdth)
     fetch(server_url+'/get_depths_from_server')
     .then( function(response) { return response.json(); })
     .then( function(data) {
-        console.log(data);
+        // console.log(data);
+        data = data.flat();
+        // data = JSON.parse(data);
         var arr = new Uint8Array( 3*data.length );
         for ( var i = 0; i < data.length; i ++ ) {
-            arr[ i*3 ] = Math.floor(scale*data); // just red channel
+            // console.log(Math.floor(parseFloat(data[i])));
+            // console.log(data[i])
+            if ( data[i] >= 0 ) {
+                arr[ i*3 ] = Math.floor(data[i]); // just red channel
+            }
+            else {
+                arr[ i*3 ] = 0;
+            }
         }
+        // console.log(arr)
 
         var texture = new THREE.DataTexture( arr, width, height, THREE.RGBFormat );
 
         base_material.displacementMap = texture;
-        base_material.displacementScale = 1;
+        base_material.displacementScale = scale;
+        // base_material.displacementBias = -100;
         base_material.needsUpdate = true;
     })
     .catch(function(e) {

@@ -1,7 +1,7 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 
-function add_model(file,loc,rot,scale,parent) {
+function add_model(file,loc,rot,scale,parent,cars) {
     new GLTFLoader()
     .load( '../models/' + file, function ( gltf ) {
         gltf.scene.traverse( function( node ) {
@@ -20,6 +20,7 @@ function add_model(file,loc,rot,scale,parent) {
         // console.log(mesh.rotation)
         parent.add( mesh );
 
+        cars.push(mesh);
        }
    );
 }

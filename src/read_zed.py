@@ -26,9 +26,11 @@ import sys
 import cv2
 import requests
 import json
+import traceback
+import time
 
-# debug_corners = False
-debug_corners = True
+debug = False
+# debug = True
 server_url = 'http://localhost:5000/'
 
 def order_points(pts):
@@ -106,7 +108,7 @@ def get_corners(zed,runtime_parameters,N):
             #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
             im = image.get_data()
-            if debug_corners:
+            if debug:
                 # cv2.imshow('frame',im)
                 # if cv2.waitKey(1) & 0xFF == ord('q'):
                     # break
@@ -114,7 +116,7 @@ def get_corners(zed,runtime_parameters,N):
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
 
             # define range of corner color in HSV (currently ORANGE for some reason)
-            lower_orange = np.array([15,200,100])
+            lower_orange = np.array([12,150,100])
             upper_orange = np.array([20,255,255])
 
             # Threshold the HSV image to get only orange colors
@@ -133,13 +135,13 @@ def get_corners(zed,runtime_parameters,N):
                 M = cv2.moments(cnt)
                 cx = int(M['m10']/M['m00'])
                 cy = int(M['m01']/M['m00'])
-                if debug_corners: im = cv2.circle(mask, (cx,cy), 10, (255,0,0), 3)
+                if debug: im = cv2.circle(mask, (cx,cy), 10, (255,0,0), 3)
                 these_corners[j] = [cx,cy]
             #these_corners_sorted = sorted(these_corners)#, key=lambda x: these_corners[x,0]**2 + these_corners[x,1]**2)
             these_corners_sorted = order_points(these_corners)
             out[i] = these_corners_sorted
 
-            if debug_corners:
+            if debug:
                 # cv2.imshow('frame',im)
                 cv2.imshow('mask',mask)
                 # cv2.imshow('res',res)
@@ -172,9 +174,15 @@ def get_corners(zed,runtime_parameters,N):
     #np.savetxt('corners.txt',averaged_corners)
     return averaged_corners
 
-def get_lego_bricks(image,depths,pts,grid):
-    colour = four_point_transform(image.get_data(), pts, grid)
-    depths = four_point_transform(depths.get_data(), pts, grid)
+def get_warped_data(image,depths,pts,grid,colour,height):
+    new_colour = four_point_transform(image.get_data(), pts, grid)
+    new_height = four_point_transform(depths.get_data(), pts, grid)
+
+    alpha = 0.9
+    colour = alpha*colour + (1-alpha)*new_colour
+    height = alpha*height + (1-alpha)*new_height
+
+    return colour, height
 
 def initialise_camera():
     zed = sl.Camera() # Create a Camera object
@@ -200,7 +208,7 @@ def initialise_camera():
 
     return zed, runtime_parameters
 
-def get_zed_frame(image,depth):
+def get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,heights):
     # A new image is available if grab() returns SUCCESS
     if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
         # Retrieve left image
@@ -210,23 +218,23 @@ def get_zed_frame(image,depth):
         # Retrieve colored point cloud. Point cloud is aligned on the left image.
         #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
         try:
-            colours,heights = get_lego_bricks(image,depth,corners,grid)
+            colours,heights = get_warped_data(image,depth,corners,grid,colours,heights)
         except:
             print('Failed to find lego bricks')
-            print(sys.exc_info()[0])
+            traceback.print_exc(file=sys.stdout)
             zed.close()
             exit(1)
         # r = requests.post(url = server_url + '/post_zed_data_to_server', data = {'depths': json.dumps(heights.tolist()),'colours': json.dumps(colours.tolist()) })
         # print("The server responded with: " + r.text)
 
-        if debug_lego_bricks:
-            d = cv2.normalize(heights, None, 255,0, cv2.NORM_MINMAX, cv2.CV_8UC1) # just for visualisation
-            # print(depths)}
-            cv2.imshow("Heights", d)
-            cv2.imshow("Colours", colours)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                # break
-                exit(1)
+        # if debug:
+        #     d = cv2.normalize(heights, None, 255,0, cv2.NORM_MINMAX, cv2.CV_8UC1) # just for visualisation
+        #     # print(depths)}
+        #     cv2.imshow("Heights", d)
+        #     cv2.imshow("Colours", colours)
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         # break
+        #         exit(1)
         return colours, heights
     else:
         print('ZED CAMERA FAILED TO GET A FRAME')
@@ -236,25 +244,50 @@ def get_zed_frame(image,depth):
 def main():
     zed, runtime_parameters = initialise_camera()
 
-    # grid = [25,25] # how many lego studs are available in horizontal and vertical direction
-    grid = 'native' # get the best image possible
+    grid = [25,25] # how many lego studs are available in horizontal and vertical direction
+    # grid = 'native' # get the best image possible
 
+    heights = np.zeros(grid)
+    colours = np.zeros([grid[0],grid[1],4])
     image = sl.Mat()
     depth = sl.Mat()
 
     try:
-        corners = get_corners(zed,runtime_parameters,10)
-    except Exception as e:
+        corners = get_corners(zed,runtime_parameters,3)
+    except:
         print('Failed to find corners, quitting gracefully. Got the exception:')
-        print(e)
+        traceback.print_exc(file=sys.stdout)
         zed.close()
         exit(1)
-    # sending post request and saving response as response object
-    # r = requests.post(url = server_url + '/post_corners_to_server', data = { 'corners': json.dumps(corners.tolist()) })
-    # print("The server responded with: " + r.text)
 
     while True:
-        heights, colours = get_zed_frame(image,depth)
+        try:
+            time.sleep(1) # wait 1 second
+            colours, heights = get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,heights)
+
+            # remove offset to plane from heights and convert to studs
+            base_offset = 1.1 # m
+            # base_offset = (height[0,0] + height[0,-1] + height[-1,0] + height[-1,-1])/4. + 8e-3
+            lego = base_offset - heights # pretty bloody unlikely to work
+            lego /= 9.6e-3 # 9.6 mm per stud
+            # print(np.around(lego))
+            lego[~np.isfinite(lego)] = 0.
+            lego = lego.astype(np.int)
+
+            # print(lego.tolist()[0])
+            # sending post request and saving response as response object
+            r = requests.post(url = server_url + '/post_zed_data_to_server', data = {
+                'depths': json.dumps(lego.tolist()),
+                'colours': json.dumps(colours.astype(np.int).tolist())
+                })
+            print("The server responded with: " + r.text)
+        except:
+            print('Failed to get frame, quitting gracefully. Got the exception:')
+            traceback.print_exc(file=sys.stdout)
+            zed.close()
+            exit(1)
+
+
     # Close the camera
     zed.close()
 
