@@ -11,13 +11,13 @@ import * as MODELS from './models.js';
 // 9.6 mm - vertical height of regular brick
 var mm_per_stud = 8.0; // JUST IN HORIZONTAL DIRECTION
 var projector_throw_ratio = 2.0; // width of projected area / distance to
-var projector_plane_distance_mm = 950.0; // distance in mm
+var projector_plane_distance_mm = 1000.0; // distance in mm
 var projector_plane_distance_studs = projector_plane_distance_mm/mm_per_stud; // distance in mm
 var projector_aspect_ratio = 16./9.
 
 var W = 25/2. // half width in LEGO studs (x direction)
 var H = 25/2. // half height in LEGO studs (y direction)
-var road_width = 2/2 // width of roads in studs
+var road_width = 2/2 // half width of roads in studs
 var block_length = 4 // one block is 4 LEGO studs
 var server_url = 'http://localhost:5000'
 
@@ -25,10 +25,11 @@ var clock = new THREE.Clock();
 var scene = new THREE.Scene();
 // var camera = new THREE.PerspectiveCamera( 50, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
 var fov_vertical = 2*Math.atan(projector_aspect_ratio/projector_throw_ratio/2.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
-console.log(fov_vertical)
 var camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
 camera.position.z = projector_plane_distance_studs;
 camera.position.y = -projector_plane_distance_studs/projector_throw_ratio/projector_aspect_ratio; // vertical offset`
+// camera.rotation.x = -fov_vertical*Math.PI/180./2.; // half FOV angle - but then I need to rotate the plane back??
+// console.log(camera.rotation.x)
 // var ambient_light = new THREE.AmbientLight( 0xFFFFFF ); // white light
 // scene.add( ambient_light );
 var sunGeometry = new THREE.SphereBufferGeometry( 0.1 ); // radius
@@ -46,8 +47,6 @@ scene.add( sun );
 sun.position.x = 0.5;
 sun.position.y = 0.5;
 sun.position.z = 1;
-console.log(sun.position)
-
 
 var renderer = new THREE.WebGLRenderer();
 renderer.shadowMap.enabled = true;
@@ -78,7 +77,7 @@ var line_material = new LineMaterial( {
 line_material.defines.USE_DASH = ""; // enables dashing
 
 var links = ROADS.generate_regular_roads(W,H,road_width,block_length)
-
+var G = ROADS.generate_regular_roads_networkx(W,H,road_width,block_length)
 // locate_domain()
 var cars = [];
 var last = 0 ;
@@ -92,11 +91,13 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
     onWindowResize();
     window.addEventListener('keypress', function(e) { manage_keypress(camera,e) });
-    MODELS.add_model('blue-jeep/Jeep.gltf',[1,-1,0],[Math.PI/2.,0,0],0.05,scene,cars);
-    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[1,2,0],[Math.PI/2.,0,0],0.01,scene,cars);
+    //                file,                       rot,            scale,parent,G,link,direction,cars,R
+    MODELS.add_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,scene,G,3,-1,cars,road_width);
+    MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[Math.PI/2.,0,0],0.01,scene,G,8,-1,cars,road_width);
 }
 
 function animate(now) {
+    var dt = clock.getDelta()
     requestAnimationFrame( animate );
     line_material.resolution.set( window.innerWidth, window.innerHeight ); // resolution of the viewport
 
@@ -111,9 +112,11 @@ function animate(now) {
     sun.position.z = 2*W*Math.cos(clock.getElapsedTime()*2.*Math.PI/T);
     // console.log(sun.rotation)
 
-    var speed = 1000; // vehicle speed
+    var speed = 1; // vehicle speed
     cars.forEach( function(car, index) {
-        car.position.y -= speed*clock.getDelta();
+        ROADS.check_for_intersection(G,car,road_width)
+        if ( car.orientation === 'h' ) { car.position.x += car.direction*speed*dt; }
+        else                           { car.position.y += car.direction*speed*dt; }
     });
     // console.log(cars);
 

@@ -1,6 +1,8 @@
 import * as THREE from './node_modules/three/build/three.module.js';
 import { LineGeometry } from './node_modules/three/examples/jsm/lines/LineGeometry.js';
 import { Line2 } from './node_modules/three/examples/jsm/lines/Line2.js';
+import * as NETWORKX from './jsnetworkx.js'
+import * as MODELS from './models.js';
 
 
 function generate_regular_roads(W,H,R,B) {
@@ -30,6 +32,33 @@ function generate_regular_roads(W,H,R,B) {
     //          ];
     return links
 }
+
+function generate_regular_roads_networkx(W,H,R,B) {
+    // This creates a new empty, undirected graph
+    // var G = new jsnx.Graph();
+    var m = Math.ceil((2*W-2*R)/(B+2*R))+1; // number of blocks in x direction
+    var n = Math.ceil((2*H-2*R)/(B+2*R))+1; // number of blocks in y direction
+    var G = jsnx.grid2dGraph(m,n);
+
+    var i = 0; var x = -W + R;
+    while ( i < m ) {
+        var j = 0; var y = -H + R;
+        while ( j < n) {
+            G.addNode([i,j], {x: x, y: y});
+            j += 1
+            if ( y + B + 2*R > H-R ) { y = H - R; }
+            else { y += B + 2*R; }
+        }
+        i += 1
+        if ( x + B + 2*R > W-R ) { x = W - R; }
+        else { x += B + 2*R; }
+    }
+    // console.log(G.nodes(true)); // show all nodes
+    // console.log(G.node.get([2,3]).x) // see x and y values here
+
+    return G
+}
+
 
 function add_road_segment(parent,pts,R,road_material) {
     var L = Math.abs(pts[1][0]-pts[0][0]) + 2*R;
@@ -189,4 +218,51 @@ function fake_update_displacement_map(base_material,server_url,W,H) {
     base_material.needsUpdate = true;
 }
 
-export { add_road_network, generate_regular_roads, update_displacement_map, fake_update_displacement_map };
+function check_for_intersection(G,car,R) {
+    if ( car.orientation === 'h' ) {
+        if ( car.direction === -1 ) {
+            if ( car.position.x < car.nodes_x[0] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+            else if ( car.position.x < car.nodes_x[1] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+        }
+        else if ( car.direction === 1 ) {
+            if ( car.position.x > car.nodes_x[0] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+            else if ( car.position.x > car.nodes_x[1] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+        }
+    }
+    if ( car.orientation === 'v' ) {
+        if ( car.direction === -1 ) {
+            if ( car.position.y < car.nodes_y[0] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+            else if ( car.position.y < car.nodes_y[1] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+        }
+        else if ( car.direction === 1 ) {
+            if ( car.position.y > car.nodes_y[0] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+            else if ( car.position.y > car.nodes_y[1] ) {
+                var new_edge = MODELS.pick_new_edge(G,car,0)
+                MODELS.assign_to_edge(G,new_edge,car,R);
+            }
+        }
+    }
+}
+
+export { add_road_network, generate_regular_roads, generate_regular_roads_networkx, update_displacement_map, fake_update_displacement_map, check_for_intersection };
