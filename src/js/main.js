@@ -6,6 +6,9 @@ import * as ROADS from './roads.js';
 import { manage_keypress } from './calibrate.js'
 import * as MODELS from './models.js';
 
+const urlParams = new URLSearchParams(window.location.search);
+
+
 // LEGO BRICK DIMENSIONS //
 // 8.0 mm - horizontal spacing from centre of one stud to another
 // 9.6 mm - vertical height of regular brick
@@ -26,11 +29,7 @@ var scene = new THREE.Scene();
 // var camera = new THREE.PerspectiveCamera( 50, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
 var fov_vertical = 2*Math.atan(projector_aspect_ratio/projector_throw_ratio/2.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
 var camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
-// camera.position.z = projector_plane_distance_studs;
-// camera.position.y = -projector_plane_distance_studs/projector_throw_ratio/projector_aspect_ratio; // vertical offset`
-camera.position.x = 0;
-camera.position.y = 0;
-camera.position.z = 30;
+
 
 // camera.rotation.x = -fov_vertical*Math.PI/180./2.; // half FOV angle - but then I need to rotate the plane back??
 // console.log(camera.rotation.x)
@@ -59,7 +58,15 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 // renderer.gammaOutput = true;
 // renderer.gammaFactor = 2.2;
 document.body.appendChild( renderer.domElement );
-var controls = new OrbitControls( camera, renderer.domElement );
+
+if ( urlParams.has('debug') ) {
+    camera.position.z = 30;
+    var controls = new OrbitControls( camera, renderer.domElement );
+}
+else {
+    camera.position.z = projector_plane_distance_studs;
+    camera.position.y = -projector_plane_distance_studs/projector_throw_ratio/projector_aspect_ratio; // vertical offset
+}
 
 var geometry = new THREE.PlaneGeometry( 2*W, 2*H,Math.floor(2*W*10),Math.floor(2*H*10));
 var base_material = new THREE.MeshStandardMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide} );
@@ -117,6 +124,7 @@ function init() {
         MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[Math.PI/2.,0,0],0.01,scene,G,i,cars,road_width);
         MODELS.add_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,scene,G,i+1,cars,road_width);
     }
+    ROADS.update_traffic_randomly(G,0.1,3);
 
 }
 
@@ -136,9 +144,12 @@ function animate(now) {
     sun.position.z = 2*W*Math.cos(clock.getElapsedTime()*2.*Math.PI/T);
     // console.log(sun.rotation)
 
-    var speed = 2; // vehicle speed
+    // var speed = 2; // vehicle speed
     cars.forEach( function(car, index) {
-        // console.log(car.direction)
+        var edge = G.getEdgeData(car.nodes[0],car.nodes[1]);
+        // console.log(edge);
+        var speed = edge.speed;
+        // console.log(G.edges(true)[index].speed);
         ROADS.check_for_intersection(G,car,road_width)
         if ( car.orientation === 'h' ) { car.position.x += car.direction*speed*dt; }
         else if ( car.orientation === 'v' ) { car.position.y += car.direction*speed*dt; }

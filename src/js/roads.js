@@ -4,6 +4,11 @@ import { Line2 } from './node_modules/three/examples/jsm/lines/Line2.js';
 import * as NETWORKX from './jsnetworkx.js'
 import * as MODELS from './models.js';
 
+function update_traffic_randomly(G,min_speed,max_speed) {
+    G.edges(true).forEach( function(edge, index) {
+        var speed = min_speed + Math.random()*(max_speed - min_speed);
+        G.adj.get(edge[0]).get(edge[1]).speed = speed;
+    });}
 
 function generate_regular_roads(W,H,R,B) {
     // W = 25 // half width in LEGO studs (x direction)
@@ -244,7 +249,6 @@ function check_for_intersection(G,car,R) {
     if ( car.orientation === 'v' ) {
         if ( car.direction === -1 ) {
             if ( car.position.y <= car.nodes_y[1] ) {
-                console.log('v1');
                 var new_nodes = MODELS.pick_target_node(G,car,0)
                 MODELS.assign_to_nodes(G,new_nodes,car);
             }
@@ -255,7 +259,6 @@ function check_for_intersection(G,car,R) {
             // }
         }
         else if ( car.direction === 1 ) {
-            console.log('v3');
             if ( car.position.y >= car.nodes_y[1] ) {
                 var new_nodes = MODELS.pick_target_node(G,car,0)
                 MODELS.assign_to_nodes(G,new_nodes,car);
@@ -269,4 +272,4 @@ function check_for_intersection(G,car,R) {
     }
 }
 
-export { add_road_network, generate_regular_roads, generate_regular_roads_networkx, update_displacement_map, fake_update_displacement_map, check_for_intersection };
+export { add_road_network, generate_regular_roads, generate_regular_roads_networkx, update_displacement_map, fake_update_displacement_map, check_for_intersection, update_traffic_randomly };

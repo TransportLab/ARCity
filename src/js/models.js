@@ -60,7 +60,7 @@ function pick_target_node(G,car,node) {
         var choice = Math.floor(Math.random() * (potential_edges.length));
         // console.log(Math.random() * potential_edges.length);
         // console.log(choice,potential_edges.length);
-        console.log(potential_edges[choice])
+        // console.log(potential_edges[choice])
         var new_nodes = [car.nodes[1],potential_edges[choice][1]];
     }
     // var nodes = G.edges(true)[new_edge]; // nearby nodes corresponding to link
