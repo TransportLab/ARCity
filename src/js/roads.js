@@ -10,7 +10,7 @@ function generate_regular_roads(W,H,R,B) {
     // H = 25 // half height in LEGO studs (y direction)
     // R = 1 // half width of roads in studs
     // B = 4 // one block is 4 LEGO studs
-    var z = 0.5;// small offset to help in general
+    var z = 0.01;// small offset to help in general
     var links = [];
     links.push([[-W+R, H-R,z],[ W-R, H-R,z]]); // top boundary
     links.push([[-W+R,-H+R,z],[ W-R,-H+R,z]]); // bottom boundary
@@ -186,10 +186,10 @@ function fake_update_displacement_map(base_material,server_url,W,H) {
             [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,5,5,5,5,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
-            [0,0,5,5,5,5,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
-            [0,0,5,5,5,5,0,0,2,2,3,3,0,0,1,1,1,1,0,0,1,1,2,0,0],
-            [0,0,5,5,5,5,0,0,2,2,3,3,0,0,3,1,1,1,0,0,1,1,2,0,0],
+            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
+            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
+            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,1,1,2,0,0],
+            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,3,1,1,1,0,0,1,1,2,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,2,2,2,2,0,0,2,2,2,2,0,0,3,3,3,3,0,0,1,1,1,0,0],
@@ -221,46 +221,50 @@ function fake_update_displacement_map(base_material,server_url,W,H) {
 function check_for_intersection(G,car,R) {
     if ( car.orientation === 'h' ) {
         if ( car.direction === -1 ) {
-            if ( car.position.x < car.nodes_x[0] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
+            if ( car.position.x <= car.nodes_x[1] ) {
+                var new_nodes = MODELS.pick_target_node(G,car,0)
+                MODELS.assign_to_nodes(G,new_nodes,car);
             }
-            else if ( car.position.x < car.nodes_x[1] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
-            }
+            // else if ( car.position.x <= car.nodes_x[1] ) {
+            //     var new_nodes = MODELS.pick_target_node(G,car,1)
+            //     MODELS.assign_to_nodes(G,new_nodes,car);
+            // }
         }
         else if ( car.direction === 1 ) {
-            if ( car.position.x > car.nodes_x[0] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
+            if ( car.position.x >= car.nodes_x[1] ) {
+                var new_nodes = MODELS.pick_target_node(G,car,0)
+                MODELS.assign_to_nodes(G,new_nodes,car);
             }
-            else if ( car.position.x > car.nodes_x[1] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
-            }
+            // else if ( car.position.x >= car.nodes_x[1] ) {
+            //     var new_nodes = MODELS.pick_target_node(G,car,1)
+            //     MODELS.assign_to_nodes(G,new_nodes,car);
+            // }
         }
     }
     if ( car.orientation === 'v' ) {
         if ( car.direction === -1 ) {
-            if ( car.position.y < car.nodes_y[0] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
+            if ( car.position.y <= car.nodes_y[1] ) {
+                console.log('v1');
+                var new_nodes = MODELS.pick_target_node(G,car,0)
+                MODELS.assign_to_nodes(G,new_nodes,car);
             }
-            else if ( car.position.y < car.nodes_y[1] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
-            }
+            // else if ( car.position.y <= car.nodes_y[1] ) {
+            //     console.log('v2');
+            //     var new_nodes = MODELS.pick_target_node(G,car,1)
+            //     MODELS.assign_to_nodes(G,new_nodes,car);
+            // }
         }
         else if ( car.direction === 1 ) {
-            if ( car.position.y > car.nodes_y[0] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
+            console.log('v3');
+            if ( car.position.y >= car.nodes_y[1] ) {
+                var new_nodes = MODELS.pick_target_node(G,car,0)
+                MODELS.assign_to_nodes(G,new_nodes,car);
             }
-            else if ( car.position.y > car.nodes_y[1] ) {
-                var new_edge = MODELS.pick_new_edge(G,car,0)
-                MODELS.assign_to_edge(G,new_edge,car,R);
-            }
+            // else if ( car.position.y >= car.nodes_y[1] ) {
+            //     console.log('v4');
+            //     var new_nodes = MODELS.pick_target_node(G,car,1)
+            //     MODELS.assign_to_nodes(G,new_nodes,car);
+            // }
         }
     }
 }
