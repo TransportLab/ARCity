@@ -32,7 +32,7 @@ function add_model(file,rot,scale,parent,G,link,cars,R) {
         car.position.set((car.nodes_x[0] + car.nodes_x[1])/2.,
                          (car.nodes_y[0] + car.nodes_y[1])/2.,
                          0);
-
+        car.isturning = false;
 
         parent.add( car );
 
@@ -84,6 +84,8 @@ function get_nodes_from_link(G,link){
 }
 
 function assign_to_nodes(G,nodes,car) {
+    car.isturning = true;
+    car.angle_before_turning = car.rotation.z;
     // console.log(nodes)
     var x_0 = G.node.get(nodes[0]).x
     var x_1 = G.node.get(nodes[1]).x
@@ -107,26 +109,48 @@ function assign_to_nodes(G,nodes,car) {
     // var node_dists = [node_0_dist,node_1_dist];
     // var nearby_node_index = node_dists.indexOf(Math.min(...node_dists));
     // console.log(nearby_node_index);
-
     if ( x_0 === x_1 ) { // link is vertical
         // car.direction = Math.sign(car.nodes_y[1-nearby_node_index]-car.nodes_y[nearby_node_index]);
         car.direction = Math.sign(car.nodes_y[1]-car.nodes_y[0])
         // console.log(car.direction);
         car.orientation = 'v'
-        car.rotation.set(0,0,(car.direction+1)/2.*Math.PI);
+        // car.rotation.set(0,0,(car.direction+1)/2.*Math.PI);
+        car.angle_after_turning = (car.direction+1)/2.*Math.PI
         // car.position.x = x_0;
     }
     else if (y_0 === y_1) { // link is horizontal
         // car.direction = Math.sign(car.nodes_x[1-nearby_node_index]-car.nodes_x[nearby_node_index]);
         car.direction = Math.sign(car.nodes_x[1]-car.nodes_x[0])
         car.orientation = 'h';
-        car.rotation.set(0,0, Math.PI/2. + (car.direction-1)/2.*Math.PI );
+        // car.rotation.set(0,0, Math.PI/2. + (car.direction-1)/2.*Math.PI );
+        car.angle_after_turning = Math.PI/2. + (car.direction-1)/2.*Math.PI;
         // car.position.y = y_0;
     }
     else {
         console.log([x_0,y_0,x_1,y_1]);
     }
-    // console.log(car.orientation);
+    var diff = (car.angle_after_turning - car.angle_before_turning)/Math.PI*180;
+    car.signed_angle_to_turn = mod(diff + 180, 360) - 180;
+
+
+    // NEED TO DO SOMETHING DIFFERENT FOR LEFT TURNS!!!!
+}
+function mod(a, n) {
+    return a - Math.floor(a/n) * n
+}
+
+function turn_car(car) {
+    var dtheta = 2.;
+    if ( Math.abs(car.signed_angle_to_turn - dtheta*Math.sign(car.signed_angle_to_turn)) > 0 ) {
+        car.signed_angle_to_turn -= dtheta*Math.sign(car.signed_angle_to_turn);
+        car.rotateZ(dtheta*Math.sign(car.signed_angle_to_turn)*Math.PI/180.);
+    }
+    else {
+        car.rotation.set(0,0,car.angle_after_turning);
+        car.signed_angle_to_turn = 0;
+        car.isturning = false;
+    }
+    // console.log(car.signed_angle_to_turn);
 }
 // export { add_model, assign_to_link, pick_new_link, pick_target_node, assign_to_nodes, get_nodes_from_link };
-export { add_model, pick_target_node, assign_to_nodes, get_nodes_from_link };
+export { add_model, pick_target_node, assign_to_nodes, get_nodes_from_link, turn_car };

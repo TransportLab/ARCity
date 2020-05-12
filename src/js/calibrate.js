@@ -22,7 +22,7 @@ function locate_domain() {
 }
 
 function manage_keypress(camera,e) {
-  if ( e.key === 'w')      { camera.position.y -= 0.01; }
+  if      ( e.key === 'w') { camera.position.y -= 0.01; }
   else if ( e.key === 'a') { camera.position.x += 0.01; }
   else if ( e.key === 's') { camera.position.y += 0.01; }
   else if ( e.key === 'd') { camera.position.x -= 0.01; }

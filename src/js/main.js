@@ -120,11 +120,11 @@ function init() {
     onWindowResize();
     window.addEventListener('keypress', function(e) { manage_keypress(camera,e) });
     //                file,                       rot,            scale,parent,G,link,cars,R
-    for (var i=0;i<20;i=i+2) {
+    for (var i=0;i<1;i=i+2) {
         MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[Math.PI/2.,0,0],0.01,scene,G,i,cars,road_width);
-        MODELS.add_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,scene,G,i+1,cars,road_width);
+        // MODELS.add_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,scene,G,i+1,cars,road_width);
     }
-    ROADS.update_traffic_randomly(G,0.1,3);
+    ROADS.update_traffic_randomly(G,2,3);
 
 }
 
@@ -146,14 +146,17 @@ function animate(now) {
 
     // var speed = 2; // vehicle speed
     cars.forEach( function(car, index) {
-        var edge = G.getEdgeData(car.nodes[0],car.nodes[1]);
-        // console.log(edge);
-        var speed = edge.speed;
-        // console.log(G.edges(true)[index].speed);
-        ROADS.check_for_intersection(G,car,road_width)
-        if ( car.orientation === 'h' ) { car.position.x += car.direction*speed*dt; }
-        else if ( car.orientation === 'v' ) { car.position.y += car.direction*speed*dt; }
-        else { console.log('Orientation not defined. Not moving.'); }
+        if ( car.isturning ) {
+            MODELS.turn_car(car);
+        }
+        else {
+            var edge = G.getEdgeData(car.nodes[0],car.nodes[1]);
+            ROADS.check_for_intersection(G,car,road_width)
+            if      ( car.orientation === 'h' ) { car.position.x += car.direction*edge.speed*dt; }
+            else if ( car.orientation === 'v' ) { car.position.y += car.direction*edge.speed*dt; }
+            else { console.log('Orientation not defined. Not moving.'); }
+
+        }
     });
     // console.log(cars);
 
