@@ -33,6 +33,7 @@ function add_model(file,rot,scale,parent,G,link,cars,R) {
                          (car.nodes_y[0] + car.nodes_y[1])/2.,
                          0);
         car.isturning = false;
+        car.making_left_turn = false;
 
         parent.add( car );
 
@@ -139,7 +140,20 @@ function mod(a, n) {
     return a - Math.floor(a/n) * n
 }
 
-function turn_car(car) {
+function turn_car(car,R) {
+    // just getting started
+    if ( car.rotation.z === car.angle_before_turning ) {
+        if ( car.signed_angle_to_turn === 90 )  { // left turn
+            car.making_left_turn = true;
+            console.log('Making left turn');
+            // if ( car.angle_before_turning === 0 ) {
+                // car.children[0].position.x = -R/2.;
+                // car.position.x -= R/2.;
+            // }
+
+
+        }
+    }
     var dtheta = 2.;
     if ( Math.abs(car.signed_angle_to_turn - dtheta*Math.sign(car.signed_angle_to_turn)) > 0 ) {
         car.signed_angle_to_turn -= dtheta*Math.sign(car.signed_angle_to_turn);
@@ -149,6 +163,12 @@ function turn_car(car) {
         car.rotation.set(0,0,car.angle_after_turning);
         car.signed_angle_to_turn = 0;
         car.isturning = false;
+        if ( car.making_left_turn ) {
+            // car.making_left_turn = false;
+            // car.children[0].position.x = R/2.;
+            // car.position.x += R/2.;
+            // console.log('Left turn done');
+        }
     }
     // console.log(car.signed_angle_to_turn);
 }

@@ -15,7 +15,7 @@ function generate_regular_roads(W,H,R,B) {
     // H = 25 // half height in LEGO studs (y direction)
     // R = 1 // half width of roads in studs
     // B = 4 // one block is 4 LEGO studs
-    var z = 0.01;// small offset to help in general
+    var z = 0.05;// small offset to help in general
     var links = [];
     links.push([[-W+R, H-R,z],[ W-R, H-R,z]]); // top boundary
     links.push([[-W+R,-H+R,z],[ W-R,-H+R,z]]); // bottom boundary
