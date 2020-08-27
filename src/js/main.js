@@ -120,10 +120,10 @@ function init() {
     onWindowResize();
     window.addEventListener('keypress', function(e) { manage_keypress(camera,e) });
     //                file,                       rot,            scale,parent,G,link,cars,R
-    for (var i=0;i<30;i=i+2) {
-        MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[Math.PI/2.,0,0],0.01,scene,G,i,cars,road_width);
-        MODELS.add_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,scene,G,i+1,cars,road_width);
-    }
+    // for (var i=0;i<30;i=i+2) {
+    //     MODELS.add_model('yellow-jeep/1385 Jeep.gltf',[Math.PI/2.,0,0],0.01,scene,G,i,cars,road_width);
+    //     MODELS.add_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,scene,G,i+1,cars,road_width);
+    // }
     ROADS.update_traffic_randomly(G,2,3);
 
 }

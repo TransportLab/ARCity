@@ -80,8 +80,8 @@ def unhandled_exception(e):
 # FLASK_APP=app.py
 # flask run
 
-# if __name__ == '__main__':
-    # app.run(debug=1)
+if __name__ == '__main__':
+    app.run(debug=1)
     # main()
 #    sleep(1)
 #main()
