@@ -11,7 +11,7 @@ Augmented reality city project
   1. Download or clone this repository
   2. Install `python3` and make sure you have the packages `flask`, `jsonify` `flask_cors` `overpy` and `numpy` by running `pip install flask jsonify flask_cors overpy numpy`
   3. Open a terminal and `cd` to the directory you saved this repository
-  4. In the terminal, run the local server with `flask run`
+  4. In the terminal, run the local server with `FLASK_APP=app.py` then `flask run` OR if that doesn't work, try `python app.py`
   5. Open Google Chrome (or possibly Firefox, but untested)
   6. In Chrome, go to the following URL: `http://localhost:5000/src/index.html`
 
