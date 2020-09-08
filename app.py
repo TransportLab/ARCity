@@ -64,6 +64,17 @@ def get_depths_from_server():
     global depths
     return json.dumps(depths)
 
+@app.route('/post_link_flow', methods=['POST'])
+def post_link_flow():
+    global flows
+    flows = json.loads(request.form['flows'])
+    return 'Received flows'
+
+@app.route('/get_link_flow', methods=['GET'])
+def get_link_flow():
+    global flows
+    return json.dumps(flows)
+
 
 
 @app.route('/get_OSM_links')
