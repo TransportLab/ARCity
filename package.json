@@ -1,0 +1,33 @@
+{
+  "name": "arcity",
+  "version": "0.1.0",
+  "description": "Augmented Reality City Simulator with LEGO",
+  "main": "src/js/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.sydney.edu.au/bmar5496/ARCity"
+  },
+  "keywords": [
+    "LEGO",
+    "Transport",
+    "simulation"
+  ],
+  "author": "Benjy Marks",
+  "license": "ISC",
+  "dependencies": {
+    "css-loader": "^6.7.3",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.1",
+    "json5": "^2.2.3",
+    "style-loader": "^3.3.2",
+    "three": "^0.151.3",
+    "webpack": "^5.81.0",
+    "webpack-cli": "^5.0.2"
+  },
+  "devDependencies": {
+    "webpack-dev-server": "^4.13.3"
+  }
+}

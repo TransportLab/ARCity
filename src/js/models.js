@@ -1,5 +1,4 @@
-import * as THREE from './node_modules/three/build/three.module.js';
-import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 function add_model(file,rot,scale,parent,G,link,cars,R) {
     new GLTFLoader()

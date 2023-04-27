@@ -1,6 +1,5 @@
-import * as THREE from './node_modules/three/build/three.module.js';
-import { LineGeometry } from './node_modules/three/examples/jsm/lines/LineGeometry.js';
-import { Line2 } from './node_modules/three/examples/jsm/lines/Line2.js';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
+import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import * as NETWORKX from './jsnetworkx.js'
 import * as MODELS from './models.js';
 
@@ -43,7 +42,7 @@ function generate_regular_roads_networkx(W,H,R,B) {
     // var G = new jsnx.Graph();
     var m = Math.ceil((2*W-2*R)/(B+2*R))+1; // number of blocks in x direction
     var n = Math.ceil((2*H-2*R)/(B+2*R))+1; // number of blocks in y direction
-    var G = jsnx.grid2dGraph(m,n);
+    var G = NETWORKX.grid2dGraph(m,n);
 
     var i = 0; var x = -W + R;
     while ( i < m ) {

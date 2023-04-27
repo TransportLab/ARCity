@@ -1,0 +1,17 @@
+{
+    // LEGO BRICK DIMENSIONS //
+    // 8.0 mm - horizontal spacing from centre of one stud to another
+    // 9.6 mm - vertical height of regular brick
+    "mm_per_stud" : 8.0, // JUST IN HORIZONTAL DIRECTION
+    "projector_throw_ratio" : 2.0, // width of projected area / distance to
+    "projector_plane_distance_mm" : 1000.0, // distance in mm
+    "projector_aspect_ratio" : 1.7777777778, // width/height, 16/9
+
+    "W" : 12.5, // half width in LEGO studs (x direction)
+    "H" : 12.5, // half height in LEGO studs (y direction)
+    "road_width" : 1, // half width of roads in studs
+    "block_length" : 4, // one block is 4 LEGO studs
+    "server_url" : "http://localhost:5000",
+
+    "num_cars" : 30, // number of cars to generate
+}
