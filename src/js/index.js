@@ -95,7 +95,7 @@ function init() {
     var geometry = new THREE.PlaneGeometry( 2*p.W, 2*p.H,Math.floor(2*p.W*10),Math.floor(2*p.H*10));
     base_material = new THREE.MeshStandardMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide} );
     base_plane = new THREE.Mesh( geometry, base_material );
-    base_plane.receiveShadow = true;
+    // base_plane.receiveShadow = true;
     base_plane.castShadow = true;
     scene.add( base_plane );
     // base_plane.position.z = 0;//-0.01;
@@ -111,13 +111,13 @@ function init() {
     } );
     line_material.defines.USE_DASH = ""; // enables dashing
 
-    var links = ROADS.generate_regular_roads(p.W,p.H,p.road_width,p.block_length)
-    var G = ROADS.generate_regular_roads_networkx(p.W,p.H,p.road_width,p.block_length)
-    window.G = G;
+    ROADS.generate_regular_roads_networkx(p.W,p.H,p.road_width,p.block_length,scene,road_material,line_material);
+    // ROADS.generate_regular_roads(p.W,p.H,p.road_width,p.block_length)
     // locate_domain()
     
     scene.background = new THREE.Color( 0x000000 );
-    ROADS.add_road_network(base_plane,links,p.road_width,road_material,line_material)
+
+    // ROADS.add_road_network(base_plane,p.road_width,road_material,line_material)
     // calibrate_camera();
 
     window.addEventListener( 'resize', onWindowResize, false );
@@ -131,8 +131,8 @@ function init() {
             await MODELS.load_model('blue-jeep/Jeep.gltf',       [Math.PI/2.,0,0],0.05,p.road_width);
             // console.log('loaded car models')
             for (var i=0;i<p.num_cars;i=i+2) {
-                MODELS.add_model(0,scene,G,i  ,cars);
-                MODELS.add_model(1,scene,G,i+1,cars);
+                MODELS.add_model(0,scene,ROADS.G,i  ,cars);
+                MODELS.add_model(1,scene,ROADS.G,i+1,cars);
             }
             
         });
@@ -141,7 +141,7 @@ function init() {
     add_async_models();
     
 
-    ROADS.update_traffic_randomly(G,2,3);
+    
 
     animate();
 
@@ -158,6 +158,7 @@ function animate() {
         // on new heights from server:
         // ROADS.update_displacement_map(base_material,server_url,W,H);
         ROADS.fake_update_displacement_map(base_material,p.server_url,p.W,p.H);
+        ROADS.update_traffic_randomly(p.min_speed,p.max_speed,base_plane);
     }
 
     sun.position.x = 2*p.W*Math.sin(t*2.*Math.PI/p.sun_period);
@@ -170,8 +171,8 @@ function animate() {
             MODELS.turn_car(car,p.road_width);
         }
         else {
-            var edge = G.getEdgeData(car.nodes[0],car.nodes[1]);
-            ROADS.check_for_intersection(G,car,p.road_width)
+            var edge = ROADS.G.getEdgeData(car.nodes[0],car.nodes[1]);
+            ROADS.check_for_intersection(car,p.road_width)
             if      ( car.orientation === 'h' ) { car.position.x += car.direction*edge.speed*dt; }
             else if ( car.orientation === 'v' ) { car.position.y += car.direction*edge.speed*dt; }
             else { console.log('Orientation not defined. Not moving.'); }

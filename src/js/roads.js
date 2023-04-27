@@ -2,47 +2,60 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import * as NETWORKX from './jsnetworkx.js'
 import * as MODELS from './models.js';
+import { Lut } from './Lut.js';
 
-function update_traffic_randomly(G,min_speed,max_speed) {
+let line_markings = new THREE.Group();
+let road_segments = new THREE.Group();
+var lut = new Lut("rkg", 512);
+lut.setMin(2);
+lut.setMax(3);
+let links = [];
+export let G;
+
+function update_traffic_randomly(min_speed,max_speed,parent) {
     G.edges(true).forEach( function(edge, index) {
         var speed = min_speed + Math.random()*(max_speed - min_speed);
         G.adj.get(edge[0]).get(edge[1]).speed = speed;
-    });}
-
-function generate_regular_roads(W,H,R,B) {
-    // W = 25 // half width in LEGO studs (x direction)
-    // H = 25 // half height in LEGO studs (y direction)
-    // R = 1 // half width of roads in studs
-    // B = 4 // one block is 4 LEGO studs
-    var z = 0.05;// small offset to help in general
-    var links = [];
-    links.push([[-W+R, H-R,z],[ W-R, H-R,z]]); // top boundary
-    links.push([[-W+R,-H+R,z],[ W-R,-H+R,z]]); // bottom boundary
-    links.push([[-W+R,-H+R,z],[-W+R, H-R,z]]); // left boundary
-    links.push([[ W-R,-H+R,z],[ W-R, H-R,z]]); // right boundary
-
-    for ( var i=-W+B+3*R;i<W-R;i+=B+2*R ) {
-        links.push([[i, H-R,z],[i,-H+R,z]]); // vertical roads
-    }
-    for ( var i=-H+B+3*R;i<H-R;i+=B+2*R ) {
-        links.push([[W-R,i,z],[-W+R,i,z]]); // horizontal roads
-    }
-    // var links = [[[-12,-12,0],[-12, 12,0]],
-    //              [[-12,-12,0],[ 12,-12,0]],
-    //              [[ 12, 12,0],[ 12,-12,0]],
-    //              [[ 12, 12,0],[-12, 12,0]],
-    //              [[-12,  0,0],[ 12,  0,0]], // horizontal middle
-    //              [[  0,-12,0],[  0, 12,0]], // vertical middle
-    //          ];
-    return links
+        road_segments.children[index].material.color = lut.getColor(speed);
+        // if ( index < parent.children.length ) {
+        //     parent.children[index].material.color = lut.getColor(speed);
+        // }
+    });
+    // parent.children[0].children[Math.floor(Math.random()*parent.children[0].children.length)].material.color = lut.getColor(min_speed + Math.random()*(max_speed - min_speed));
 }
 
-function generate_regular_roads_networkx(W,H,R,B) {
+// function generate_regular_roads(W,H,R,B) {
+//     // W = 25 // half width in LEGO studs (x direction)
+//     // H = 25 // half height in LEGO studs (y direction)
+//     // R = 1 // half width of roads in studs
+//     // B = 4 // one block is 4 LEGO studs
+//     var z = 0.05;// small offset to help in general
+//     links.push([[-W+R, H-R,z],[ W-R, H-R,z]]); // top boundary
+//     links.push([[-W+R,-H+R,z],[ W-R,-H+R,z]]); // bottom boundary
+//     links.push([[-W+R,-H+R,z],[-W+R, H-R,z]]); // left boundary
+//     links.push([[ W-R,-H+R,z],[ W-R, H-R,z]]); // right boundary
+
+//     for ( var i=-W+B+3*R;i<W-R;i+=B+2*R ) {
+//         links.push([[i, H-R,z],[i,-H+R,z]]); // vertical roads
+//     }
+//     for ( var i=-H+B+3*R;i<H-R;i+=B+2*R ) {
+//         links.push([[W-R,i,z],[-W+R,i,z]]); // horizontal roads
+//     }
+//     // var links = [[[-12,-12,0],[-12, 12,0]],
+//     //              [[-12,-12,0],[ 12,-12,0]],
+//     //              [[ 12, 12,0],[ 12,-12,0]],
+//     //              [[ 12, 12,0],[-12, 12,0]],
+//     //              [[-12,  0,0],[ 12,  0,0]], // horizontal middle
+//     //              [[  0,-12,0],[  0, 12,0]], // vertical middle
+//     //          ];
+// }
+
+function generate_regular_roads_networkx(W,H,R,B,parent,road_material,line_material) {
     // This creates a new empty, undirected graph
     // var G = new jsnx.Graph();
     var m = Math.ceil((2*W-2*R)/(B+2*R))+1; // number of blocks in x direction
     var n = Math.ceil((2*H-2*R)/(B+2*R))+1; // number of blocks in y direction
-    var G = NETWORKX.grid2dGraph(m,n);
+    G = NETWORKX.grid2dGraph(m,n);
 
     var i = 0; var x = -W + R;
     while ( i < m ) {
@@ -52,29 +65,44 @@ function generate_regular_roads_networkx(W,H,R,B) {
             j += 1
             if ( y + B + 2*R > H-R ) { y = H - R; }
             else { y += B + 2*R; }
+            console.log(x,y)
         }
         i += 1
         if ( x + B + 2*R > W-R ) { x = W - R; }
         else { x += B + 2*R; }
     }
+    
     // console.log(G.nodes(true)); // show all nodes
     // console.log(G.node.get([2,3]).x) // see x and y values here
 
-    return G
+    G.edges(true).forEach( function(edge, index) {
+        let zoff = 0.5*Math.random();
+        let pts = [[G.node.get(edge[0]).x, G.node.get(edge[0]).y, zoff],
+                   [G.node.get(edge[1]).x, G.node.get(edge[1]).y, zoff]];
+        add_road_segment(road_segments,pts,R,road_material);
+        add_line_marking_segment(line_markings,pts,line_material);
+    });
+    parent.add( road_segments );
+    parent.add( line_markings );
+    // console.log(parent)
 }
 
 
 function add_road_segment(parent,pts,R,road_material) {
+    // // segments end at intersection
+    // var L = Math.abs(pts[1][0]-pts[0][0]);// + 2*R;
+    // var H = Math.abs(pts[1][1]-pts[0][1]);// + 2*R;
+    // if (L == 0) { L += 2*R; }
+    // if (H == 0) { H += 2*R; }
+    // segments overlap with intersection
     var L = Math.abs(pts[1][0]-pts[0][0]) + 2*R;
     var H = Math.abs(pts[1][1]-pts[0][1]) + 2*R;
-    // if (L > 0) { L += 2*R; }
-    // if (H > 0) { H += 2*R; }
     // console.log(L,H);
     var geometry = new THREE.PlaneGeometry( L, H );
-    var road = new THREE.Mesh( geometry, road_material );
+    var road = new THREE.Mesh( geometry, road_material.clone() );
     road.position.x = (pts[1][0]+pts[0][0])/2.;
     road.position.y = (pts[1][1]+pts[0][1])/2.;
-    road.position.z = pts[1][2]/2.; // just half the offset
+    road.position.z = (pts[0][2] + pts[1][2])/2.; // less than the offset so that the lines go on top
     road.receiveShadow = true;
     parent.add( road );
 
@@ -122,14 +150,17 @@ function add_line_marking_segment(parent,pts,line_material) {
     parent.add( line );
 }
 
-function add_road_network(parent,links,R,road_material,line_material) {
-    links.forEach(function(pts, index, array) {
-        add_road_segment(parent,pts,R,road_material);
-    });
-    links.forEach(function(pts, index, array) {
-        add_line_marking_segment(parent,pts,line_material);
-    });
-}
+// function add_road_network(parent,R,road_material,line_material) {
+//     parent.add(road_segments);
+//     links.forEach(function(pts, index, array) {
+//         add_road_segment(road_segments,pts,R,road_material);
+//     });
+
+//     parent.add(line_markings);
+//     links.forEach(function(pts, index, array) {
+//         add_line_marking_segment(line_markings,pts,line_material);
+//     });
+// }
 
 function update_displacement_map(base_material,server_url,W,H) {
     var width = Math.floor(2*W);
@@ -227,7 +258,7 @@ function fake_update_displacement_map(base_material,server_url,W,H) {
     
 }
 
-function check_for_intersection(G,car,R) {
+function check_for_intersection(car,R) {
     if ( car.orientation === 'h' ) {
         if ( car.direction === -1 ) {
             if ( car.position.x <= car.nodes_x[1] ) {
@@ -276,4 +307,4 @@ function check_for_intersection(G,car,R) {
     }
 }
 
-export { add_road_network, generate_regular_roads, generate_regular_roads_networkx, update_displacement_map, fake_update_displacement_map, check_for_intersection, update_traffic_randomly };
+export { generate_regular_roads_networkx, update_displacement_map, fake_update_displacement_map, check_for_intersection, update_traffic_randomly };

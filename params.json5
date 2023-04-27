@@ -13,8 +13,11 @@
     "block_length" : 4, // one block is 4 LEGO studs
     "server_url" : "http://localhost:5000",
 
-    "num_cars" : 30, // number of cars to generate
-    "sun_period" : 500, // time in ms for sun to go from one side to the other
+    "num_cars" : 0, // number of cars to generate
+    "sun_period" : 5000, // time in ms for sun to go from one side to the other
 
     "displacement_map_update_time" : 2, // time in s between displacement map updates
+
+    "min_speed" : 2, 
+    "max_speed" : 3,
 }

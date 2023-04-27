@@ -22,31 +22,37 @@ function locate_domain() {
 }
 
 function manage_keypress(camera,e) {
-  if      ( e.key === 'w') { camera.position.y -= 0.01; }
-  else if ( e.key === 'a') { camera.position.x += 0.01; }
-  else if ( e.key === 's') { camera.position.y += 0.01; }
-  else if ( e.key === 'd') { camera.position.x -= 0.01; }
-  else if ( e.key === 'q') { camera.position.z += 0.01; }
-  else if ( e.key === 'e') { camera.position.z -= 0.01; }
-  else if ( e.key === 'r') { camera.rotation.x += 0.001; }
-  else if ( e.key === 'f') { camera.rotation.x -= 0.001; }
-  else if ( e.key === 't') { camera.rotation.y += 0.001; }
-  else if ( e.key === 'g') { camera.rotation.y -= 0.001; }
-  else if ( e.key === 'y') { camera.rotation.z += 0.001; }
-  else if ( e.key === 'h') { camera.rotation.z -= 0.001; }
+  let key = e.key.toLowerCase();
+  let disp = 1;
+//   if ( e.altKey  ) { disp *= 10; console.log('ALT') }
+  if ( e.ctrlKey  ) { disp *= 10; } // console.log('CTRL') }
+  if ( e.shiftKey ) { disp *= 10; } // console.log('SHIFT') }
+  
+  if      ( key === 'w') { camera.position.y -= 0.01*disp; }
+  else if ( key === 'a') { camera.position.x += 0.01*disp; }
+  else if ( key === 's') { camera.position.y += 0.01*disp; }
+  else if ( key === 'd') { camera.position.x -= 0.01*disp; }
+  else if ( key === 'q') { camera.position.z += 0.01*disp; }
+  else if ( key === 'e') { camera.position.z -= 0.01*disp; }
+  else if ( key === 'r') { camera.rotation.x += 0.001*disp; }
+  else if ( key === 'f') { camera.rotation.x -= 0.001*disp; }
+  else if ( key === 't') { camera.rotation.y += 0.001*disp; }
+  else if ( key === 'g') { camera.rotation.y -= 0.001*disp; }
+  else if ( key === 'y') { camera.rotation.z += 0.001*disp; }
+  else if ( key === 'h') { camera.rotation.z -= 0.001*disp; }
 
-  else if ( e.key === 'W') { camera.position.y -= 0.1; }
-  else if ( e.key === 'A') { camera.position.x += 0.1; }
-  else if ( e.key === 'S') { camera.position.y += 0.1; }
-  else if ( e.key === 'D') { camera.position.x -= 0.1; }
-  else if ( e.key === 'Q') { camera.position.z += 0.1; }
-  else if ( e.key === 'E') { camera.position.z -= 0.1; }
-  else if ( e.key === 'R') { camera.rotation.x += 0.01; }
-  else if ( e.key === 'F') { camera.rotation.x -= 0.01; }
-  else if ( e.key === 'T') { camera.rotation.y += 0.01; }
-  else if ( e.key === 'G') { camera.rotation.y -= 0.01; }
-  else if ( e.key === 'Y') { camera.rotation.z += 0.01; }
-  else if ( e.key === 'H') { camera.rotation.z -= 0.01; }
+//   else if ( e.key === 'W') { camera.position.y -= 0.1; }
+//   else if ( e.key === 'A') { camera.position.x += 0.1; }
+//   else if ( e.key === 'S') { camera.position.y += 0.1; }
+//   else if ( e.key === 'D') { camera.position.x -= 0.1; }
+//   else if ( e.key === 'Q') { camera.position.z += 0.1; }
+//   else if ( e.key === 'E') { camera.position.z -= 0.1; }
+//   else if ( e.key === 'R') { camera.rotation.x += 0.01; }
+//   else if ( e.key === 'F') { camera.rotation.x -= 0.01; }
+//   else if ( e.key === 'T') { camera.rotation.y += 0.01; }
+//   else if ( e.key === 'G') { camera.rotation.y -= 0.01; }
+//   else if ( e.key === 'Y') { camera.rotation.z += 0.01; }
+//   else if ( e.key === 'H') { camera.rotation.z -= 0.01; }
 
 }
 
