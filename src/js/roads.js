@@ -65,7 +65,7 @@ function generate_regular_roads_networkx(W,H,R,B,parent,road_material,line_mater
             j += 1
             if ( y + B + 2*R > H-R ) { y = H - R; }
             else { y += B + 2*R; }
-            console.log(x,y)
+            // console.log(x,y)
         }
         i += 1
         if ( x + B + 2*R > W-R ) { x = W - R; }
@@ -76,7 +76,7 @@ function generate_regular_roads_networkx(W,H,R,B,parent,road_material,line_mater
     // console.log(G.node.get([2,3]).x) // see x and y values here
 
     G.edges(true).forEach( function(edge, index) {
-        let zoff = 0.5*Math.random();
+        let zoff = 0.1;//*Math.random();
         let pts = [[G.node.get(edge[0]).x, G.node.get(edge[0]).y, zoff],
                    [G.node.get(edge[1]).x, G.node.get(edge[1]).y, zoff]];
         add_road_segment(road_segments,pts,R,road_material);
@@ -102,7 +102,7 @@ function add_road_segment(parent,pts,R,road_material) {
     var road = new THREE.Mesh( geometry, road_material.clone() );
     road.position.x = (pts[1][0]+pts[0][0])/2.;
     road.position.y = (pts[1][1]+pts[0][1])/2.;
-    road.position.z = (pts[0][2] + pts[1][2])/2.; // less than the offset so that the lines go on top
+    road.position.z = (pts[0][2] + pts[1][2])/4.; // less than the offset so that the lines go on top
     road.receiveShadow = true;
     parent.add( road );
 
