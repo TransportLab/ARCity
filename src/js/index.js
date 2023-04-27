@@ -13,9 +13,9 @@ const urlParams = new URLSearchParams(window.location.search);
 let p; // parameters to be loaded from json file
 let clock, scene, camera, renderer
 let line_material, road_material, base_material;
-let last;
-let sun;
-let cars;
+let t_prev = 0;
+let sun, base_plane;
+let cars = [];
 
 fetch("params.json5")
     .then(r => 
@@ -94,11 +94,11 @@ function init() {
 
     var geometry = new THREE.PlaneGeometry( 2*p.W, 2*p.H,Math.floor(2*p.W*10),Math.floor(2*p.H*10));
     base_material = new THREE.MeshStandardMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide} );
-    var base_plane = new THREE.Mesh( geometry, base_material );
+    base_plane = new THREE.Mesh( geometry, base_material );
     base_plane.receiveShadow = true;
     base_plane.castShadow = true;
     scene.add( base_plane );
-    base_plane.position.z = 0;//-0.01;
+    // base_plane.position.z = 0;//-0.01;
 
     road_material = new THREE.MeshStandardMaterial( {color: 0x000000});//, side: THREE.DoubleSide} );
 
@@ -115,8 +115,7 @@ function init() {
     var G = ROADS.generate_regular_roads_networkx(p.W,p.H,p.road_width,p.block_length)
     window.G = G;
     // locate_domain()
-    cars = [];
-    last = 0 ;
+    
     scene.background = new THREE.Color( 0x000000 );
     ROADS.add_road_network(base_plane,links,p.road_width,road_material,line_material)
     // calibrate_camera();
@@ -148,20 +147,21 @@ function init() {
 
 }
 
-function animate(now) {
-    var dt = clock.getDelta()
-    requestAnimationFrame( animate );
-    line_material.resolution.set( window.innerWidth, window.innerHeight ); // resolution of the viewport
+function animate() {
+    let dt = clock.getDelta(); 
+    let t = clock.getElapsedTime();
 
-    if(!last || now - last >= 1000) { // every 5 seconds
-        last = now;
+    line_material.resolution.set( window.innerWidth, window.innerHeight ); // resolution of the viewport
+    // console.log(t - t_prev)
+    if(t - t_prev >= p.displacement_map_update_time) { // every 5 seconds
+        t_prev = t;
         // on new heights from server:
         // ROADS.update_displacement_map(base_material,server_url,W,H);
         ROADS.fake_update_displacement_map(base_material,p.server_url,p.W,p.H);
     }
-    var T = 50000; // period of rotation of sun
-    sun.position.x = 2*p.W*Math.sin(clock.getElapsedTime()*2.*Math.PI/T);
-    sun.position.z = 2*p.W*Math.cos(clock.getElapsedTime()*2.*Math.PI/T);
+
+    sun.position.x = 2*p.W*Math.sin(t*2.*Math.PI/p.sun_period);
+    sun.position.z = 2*p.W*Math.cos(t*2.*Math.PI/p.sun_period);
     // console.log(sun.rotation)
 
     // var speed = 2; // vehicle speed
@@ -178,9 +178,8 @@ function animate(now) {
 
         }
     });
-    // console.log(cars);
 
-
+    requestAnimationFrame( animate );
     renderer.render( scene, camera );
 };
 

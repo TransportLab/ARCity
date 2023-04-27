@@ -178,8 +178,8 @@ function update_displacement_map(base_material,server_url,W,H) {
 }
 
 function fake_update_displacement_map(base_material,server_url,W,H) {
-    var width = Math.floor(2*W);
-    var height = Math.floor(2*H);
+    // var width = Math.floor(2*W);
+    // var height = Math.floor(2*H);
 
     var scale = 255*(9.6/8.0) // to get height in stud widths (threejs in units of stud witdth)
     var data;
@@ -209,17 +209,22 @@ function fake_update_displacement_map(base_material,server_url,W,H) {
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
 
+    let width = data.length;
+    let height = data[0].length; // maybe wrong way around
+
     data = data.reverse().flat()
-    var arr = new Uint8Array( 3*data.length );
+    var arr = new Uint8Array( 4*data.length );
     for ( var i = 0; i < data.length; i ++ ) {
-        arr[ i*3 ] = data[i]; // just red channel
+        arr[ i*4 ] = data[i]; // just red channel
     }
 
-    var texture = new THREE.DataTexture( arr, width, height, THREE.RGBFormat );
+    var texture = new THREE.DataTexture( arr, width, height, THREE.RGBAFormat );
+    texture.needsUpdate = true;
 
     base_material.displacementMap = texture;
     base_material.displacementScale = scale;
     base_material.needsUpdate = true;
+    
 }
 
 function check_for_intersection(G,car,R) {

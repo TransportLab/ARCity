@@ -14,4 +14,7 @@
     "server_url" : "http://localhost:5000",
 
     "num_cars" : 30, // number of cars to generate
+    "sun_period" : 500, // time in ms for sun to go from one side to the other
+
+    "displacement_map_update_time" : 2, // time in s between displacement map updates
 }
