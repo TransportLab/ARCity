@@ -1,8 +1,11 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-function add_model(file,rot,scale,parent,G,link,cars,R) {
-    new GLTFLoader()
-    .load( '../models/' + file, function ( gltf ) {
+let car_models = [];
+
+export async function load_model(file,rot,scale,R) {
+    const r = await new GLTFLoader()
+    .loadAsync( '../models/' + file)
+    .then( function ( gltf ) {
         gltf.scene.traverse( function( node ) {
             if ( node.isMesh ) { node.castShadow = true; }
         } );
@@ -25,20 +28,29 @@ function add_model(file,rot,scale,parent,G,link,cars,R) {
         car.add( mesh );
         mesh.position.x = R/2.; // put on left side of road
 
-        var nodes = get_nodes_from_link(G,link)
-        assign_to_nodes(G,nodes,car)
-        // assign_to_link(G,link,car);
-        car.position.set((car.nodes_x[0] + car.nodes_x[1])/2.,
-                         (car.nodes_y[0] + car.nodes_y[1])/2.,
-                         0);
-        car.isturning = false;
-        car.making_left_turn = false;
-
-        parent.add( car );
-
-        cars.push(car);
+        car_models.push(car);
+        // console.log(car_models);
        }
    );
+//    return r;
+}
+
+export function add_model(i,parent,G,link,cars) {
+    // console.log(car_models)
+    let car = car_models[i].clone();
+
+    var nodes = get_nodes_from_link(G,link)
+    assign_to_nodes(G,nodes,car)
+    // assign_to_link(G,link,car);
+    car.position.set((car.nodes_x[0] + car.nodes_x[1])/2.,
+                        (car.nodes_y[0] + car.nodes_y[1])/2.,
+                        0);
+    car.isturning = false;
+    car.making_left_turn = false;
+
+    parent.add( car );
+
+    cars.push(car);
 }
 
 function pick_new_link(G,car,node) {
@@ -52,7 +64,7 @@ function pick_new_link(G,car,node) {
     return new_edge
 }
 
-function pick_target_node(G,car,node) {
+export function pick_target_node(G,car,node) {
     var new_nodes = [[0,0],[0,0]];
     while ((new_nodes[0][0] === new_nodes[1][0]) && (new_nodes[0][1] === new_nodes[1][1])) {
         var potential_edges = G.edges(car.nodes[1])// get all edges at node
@@ -83,7 +95,7 @@ function get_nodes_from_link(G,link){
     return nodes
 }
 
-function assign_to_nodes(G,nodes,car) {
+export function assign_to_nodes(G,nodes,car) {
     car.isturning = true;
     car.angle_before_turning = car.rotation.z;
     // console.log(nodes)
@@ -139,7 +151,7 @@ function mod(a, n) {
     return a - Math.floor(a/n) * n
 }
 
-function turn_car(car,R) {
+export function turn_car(car,R) {
     // just getting started
     if ( car.rotation.z === car.angle_before_turning ) {
         if ( car.signed_angle_to_turn === 90 )  { // left turn
@@ -172,4 +184,4 @@ function turn_car(car,R) {
     // console.log(car.signed_angle_to_turn);
 }
 // export { add_model, assign_to_link, pick_new_link, pick_target_node, assign_to_nodes, get_nodes_from_link };
-export { add_model, pick_target_node, assign_to_nodes, get_nodes_from_link, turn_car };
+// export { add_model, pick_target_node, assign_to_nodes, get_nodes_from_link, turn_car };
