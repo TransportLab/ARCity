@@ -1,5 +1,5 @@
 # ARCity
-Augmented reality city project
+Augmented reality city project. [See the live version here](https://transportlab.github.io/ARCity/?debug).
 
 ## Components
   1. Stereolabs zed camera controlled via a python script
