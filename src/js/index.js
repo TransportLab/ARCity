@@ -37,11 +37,15 @@ function init() {
     var fov_vertical = 2*Math.atan(p.projector_aspect_ratio/p.projector_throw_ratio/2.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
     camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
 
-    var ambient_light = new THREE.AmbientLight( 0x555555 ); // white light
+    var ambient_light = new THREE.AmbientLight( 0xFFFFFF ); // white light
+    ambient_light.intensity = 0.1;
     scene.add( ambient_light );
 
     sun = new THREE.PointLight( 0xFFFFFF, 1, 0, 2 ); // white light
+    // sun.intensity = 0;
     sun.castShadow = true;
+    sun.shadow.mapSize.width = 2*1024;
+    sun.shadow.mapSize.height = 2*1024;
     scene.add( sun );
 
     if ( p.show_sun ) {
@@ -58,7 +62,7 @@ function init() {
     sun.position.y = 0.5;
     sun.position.z = 1;
 
-    renderer = new THREE.WebGLRenderer();
+    renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );

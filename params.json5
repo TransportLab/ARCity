@@ -14,8 +14,8 @@
     "server_url" : "http://localhost:5000",
 
     "num_cars" : 10, // number of cars to generate
-    "daily_period" : 5, // time in s for a whole day
-    "show_sun" : true, // show sun or not
+    "daily_period" : 60, // time in s for a whole day
+    "show_sun" : false, // show sun or not
 
     "displacement_map_update_time" : 2, // time in s between displacement map updates
 

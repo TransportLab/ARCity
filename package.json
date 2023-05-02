@@ -4,7 +4,10 @@
   "description": "Augmented Reality City Simulator with LEGO",
   "main": "src/js/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --watch",
+    "start": "webpack serve --open",
+    "build": "webpack build"
   },
   "repository": {
     "type": "git",
