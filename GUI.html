@@ -1,0 +1,49 @@
+<html>
+<head>
+    <title>ARCity GUI</title>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZM8E7R0E8Z"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-ZM8E7R0E8Z');
+    </script>
+<link rel="icon" href="favicon.ico"><script defer src="GUI-bundle.js"></script></head>
+
+<body>
+    <div id="wrap">
+        <div class="column left_col">
+            Stability classification:
+            <select id="stability" onchange="redrawContours()">
+                <option id="A" value="A" selected>A</option>
+                <option id="B" value="B">B</option>
+                <option id="C" value="C">C</option>
+                <option id="D" value="D">D</option>
+                <option id="E" value="E">E</option>
+                <option id="F" value="F">F</option>
+            </select>
+            <span class="point-only">Source height above ground (m): <input onchange="redrawContours()" type="number" id="h" value="30" min="0"/></span>
+            <span id="source-title">Source pollutant emission rate (g/s):</span> <input onchange="redrawContours()" type="number" id="q" value="1" min="0"/>
+            Viewing height above ground (m): <input onchange="redrawContours()" type="number" id="delta" value="0" min="0" />
+            <span class="point-only">Ambient temperature (&deg;C): <input onchange="redrawContours()" class="buoyancy" type="number" id="T_a" value="25" min="-273"/></span>
+            <span class="point-only">Stack temperature (&deg;C): <input onchange="redrawContours()" class="buoyancy" type="number" id="T_s" value="25" min="-273"/></span>
+            <span class="point-only">Stack diameter (m): <input onchange="redrawContours()" class="buoyancy" type="number" id="d_s" value="5" min="0"/></span>
+            <span class="point-only">Stack exit velocity (m/s): <input onchange="redrawContours()" class="buoyancy" type="number" id="v_s" value="10" min="0"/></span>
+            <span class="line-only">Resolution: <input onchange="redrawContours()" type="number" id="resolution" value="100" min="20" max="1000"/></span>
+            <span id="concentration-contours-title">Concentrations, separate with ';' (&micro;g/m<sup>3</sup>):</span> <input onchange="redrawContours()" type="text" id="concentration_contours" value="0.1; 1; 10" />
+            <!-- <div id="grad"></div> -->
+            <!-- <p style="text-align:center"><span style="float:left">< 10<sup>0</sup></span> 10<sup>1</sup></span> <span style="float:right">> 10<sup>2</sup></span></p> -->
+            <!-- Wind speed and direction: -->
+            <!-- <br><br> -->
+            <!-- <canvas id="wind_rose" width="350" height="350"></canvas> -->
+        </div>
+
+        <!-- <div id="map" class="column right_col"></div> -->
+    </div>
+</body>
+</html>

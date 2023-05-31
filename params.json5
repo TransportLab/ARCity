@@ -7,9 +7,9 @@
     "projector_plane_distance_mm" : 1000.0, // distance in mm
     "projector_aspect_ratio" : 1.7777777778, // width/height, 16/9
 
-    "W" : 12.5, // half width in LEGO studs (x direction)
-    "H" : 12.5, // half height in LEGO studs (y direction)
-    "road_width" : 1, // half width of roads in studs
+    "W" : 12.5, // half width of domain in LEGO studs (x direction)
+    "H" : 12.5, // half height of domain in LEGO studs (y direction)
+    "road_width" : 1, // half width of a road in studs
     "block_length" : 4, // one block is 4 LEGO studs
     "server_url" : "http://localhost:5000",
 
@@ -21,4 +21,59 @@
 
     "min_speed" : 2, 
     "max_speed" : 3,
+
+    corner_colour : "orange",
+
+    "colours" : {
+        "orange": { // corners
+            "lower": [12, 150, 100],
+            "upper": [20, 255, 255],
+            "index": -2 
+        },
+        "red": {
+            "lower": [0, 120, 70],
+            "upper": [10, 255, 255],
+            "index": 0
+        },
+        "blue": {
+            "lower": [90, 120, 70],
+            "upper": [130, 255, 255],
+            "index": 1
+        },
+        "yellow": {
+            "lower": [25, 120, 70],
+            "upper": [35, 255, 255],
+            "index": 2
+        },
+        "green": {
+            "lower": [45, 120, 70],
+            "upper": [75, 255, 255],
+            "index": 3
+        },
+        "white": {
+            "lower": [0, 0, 200],
+            "upper": [180, 30, 255],
+            "index": 5
+        },
+        "black": {
+            "lower": [0, 0, 0],
+            "upper": [180, 255, 50],
+            "index": 6
+        },
+        "gray": {
+            "lower": [0, 0, 70],
+            "upper": [180, 30, 200],
+            "index": 7
+        },
+        "brown": {
+            "lower": [10, 120, 70],
+            "upper": [20, 255, 255],
+            "index": 8
+        },
+        "purple": {
+            "lower": [140, 120, 70],
+            "upper": [160, 255, 255],
+            "index": 9
+        }
+    }
 }
