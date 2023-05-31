@@ -19,13 +19,12 @@
 ########################################################################
 
 import pyzed.sl as sl
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import cv2
 import requests
-import json
+import json5
 import traceback
 import time
 
@@ -115,15 +114,13 @@ def get_corners(zed,runtime_parameters,N):
                 plt.imsave('frame.png',im)
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
 
-            # define range of corner color in HSV (currently ORANGE for some reason)
-            lower_orange = np.array([12,150,100])
-            upper_orange = np.array([20,255,255])
-
             # Threshold the HSV image to get only orange colors
-            mask = cv2.inRange(hsv, lower_orange, upper_orange)
+            mask = cv2.inRange(hsv,
+                               p['colours'][p['corner_colour']]['lower'],
+                               p['colours'][p['corner_colour']]['upper'])
 
             # Bitwise-AND mask and original image
-            res = cv2.bitwise_and(im,im, mask= mask)
+            res = cv2.bitwise_and(im,im, mask=mask)
 
             contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             cnts = sorted(contours, key=cv2.contourArea)
@@ -184,6 +181,20 @@ def get_warped_data(image,depths,pts,grid,colour,height):
 
     return colour, height
 
+def map_colours_to_brick_types(im):
+    # WARNING: UNTESTED. JUST FOR ILLUSTRATION PURPOSES.
+    hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
+    brick_types = np.zeros([im.shape[0],im.shape[1]])
+
+    for c in p['colours']: # go through each colour
+        # Threshold the HSV image to get only orange colors
+        mask = cv2.inRange(hsv,
+                            p['colours'][c]['lower'],
+                            p['colours'][c]['upper'])
+        brick_types[mask==255] = p['colours'][c]['index']
+
+    return brick_types
+
 def initialise_camera():
     zed = sl.Camera() # Create a Camera object
 
@@ -224,7 +235,7 @@ def get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,height
             traceback.print_exc(file=sys.stdout)
             zed.close()
             exit(1)
-        # r = requests.post(url = server_url + '/post_zed_data_to_server', data = {'depths': json.dumps(heights.tolist()),'colours': json.dumps(colours.tolist()) })
+        # r = requests.post(url = server_url + '/post_zed_data_to_server', data = {'depths': json5.dumps(heights.tolist()),'colours': json5.dumps(colours.tolist()) })
         # print("The server responded with: " + r.text)
 
         # if debug:
@@ -243,6 +254,8 @@ def get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,height
 
 def main():
     zed, runtime_parameters = initialise_camera()
+
+    p = json5.loads(open('../../params.json5').read())
 
     grid = [25,25] # how many lego studs are available in horizontal and vertical direction
     # grid = 'native' # get the best image possible
@@ -277,8 +290,8 @@ def main():
             # print(lego.tolist()[0])
             # sending post request and saving response as response object
             r = requests.post(url = server_url + '/post_zed_data_to_server', data = {
-                'depths': json.dumps(lego.tolist()),
-                'colours': json.dumps(colours.astype(np.int).tolist())
+                'depths': json5.dumps(lego.tolist()),
+                'colours': json5.dumps(colours.astype(np.int).tolist())
                 })
             print("The server responded with: " + r.text)
         except:

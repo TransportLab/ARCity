@@ -7,18 +7,24 @@ module.exports = [
     mode: "development",
     // mode: "production",
     entry: {
-      "index": './src/js/index.js',
+      "projector": './src/js/projector.js',
+      "GUI": './src/js/GUI.js',
     },
     plugins: [
       new webpack.ProvidePlugin({
         THREE: 'three'
       }),
       new HtmlWebpackPlugin({
-        title: 'ARCity',
-        // favicon: "./resources/favicon512.png",
-        // template: "index.html",
-        filename: "index.html",
-        chunks: ['index']
+        title: 'ARCity Projector',
+        favicon: "./resources/favicon.ico",
+        filename: "projector.html",
+        chunks: ['projector']
+      }),
+      new HtmlWebpackPlugin({
+        favicon: "./resources/favicon.ico",
+        template: "./src/html/GUI.html",
+        filename: "GUI.html",
+        chunks: ['GUI']
       }),
     ],
     output: {
@@ -28,7 +34,7 @@ module.exports = [
     },
     devServer: {
       static: {
-        directory: '.'
+        directory: './dist/'
       },
     },
     module: {
