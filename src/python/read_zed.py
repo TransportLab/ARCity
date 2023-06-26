@@ -212,10 +212,11 @@ def initialise_camera():
 
     runtime_parameters = sl.RuntimeParameters()
     # runtime_parameters.sensing_mode = sl.SENSING_MODE.STANDARD  # Use STANDARD sensing mode
-    runtime_parameters.sensing_mode = sl.SENSING_MODE.FILL # fill all holes in depth sensing
+    # runtime_parameters.sensing_mode = sl.SENSING_MODE.FILL # fill all holes in depth sensing
+    runtime_parameters.enable_fill_mode = True
     # Setting the depth confidence parameters
     runtime_parameters.confidence_threshold = 100 # NOT SURE WHAT THIS DOES
-    runtime_parameters.textureness_confidence_threshold = 100 # NOT SURE WHAT THIS DOES
+    runtime_parameters.texture_confidence_threshold = 100 # NOT SURE WHAT THIS DOES
 
     return zed, runtime_parameters
 
