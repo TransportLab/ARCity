@@ -92,7 +92,7 @@ def four_point_transform(image, pts, grid):
     # return the warped image
     return warped
 
-def get_corners(zed,runtime_parameters,N):
+def get_corners(zed,runtime_parameters,N,p):
     i = 0
     image = sl.Mat()
     out = np.zeros([N,4,2])
@@ -116,8 +116,8 @@ def get_corners(zed,runtime_parameters,N):
 
             # Threshold the HSV image to get only orange colors
             mask = cv2.inRange(hsv,
-                               p['colours'][p['corner_colour']]['lower'],
-                               p['colours'][p['corner_colour']]['upper'])
+                               np.array(p['colours'][p['corner_colour']]['lower']),
+                               np.array(p['colours'][p['corner_colour']]['upper']))
 
             # Bitwise-AND mask and original image
             res = cv2.bitwise_and(im,im, mask=mask)
@@ -181,7 +181,7 @@ def get_warped_data(image,depths,pts,grid,colour,height):
 
     return colour, height
 
-def map_colours_to_brick_types(im):
+def map_colours_to_brick_types(im,p):
     # WARNING: UNTESTED. JUST FOR ILLUSTRATION PURPOSES.
     hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
     brick_types = np.zeros([im.shape[0],im.shape[1]])
@@ -212,10 +212,11 @@ def initialise_camera():
 
     runtime_parameters = sl.RuntimeParameters()
     # runtime_parameters.sensing_mode = sl.SENSING_MODE.STANDARD  # Use STANDARD sensing mode
-    runtime_parameters.sensing_mode = sl.SENSING_MODE.FILL # fill all holes in depth sensing
+    # runtime_parameters.sensing_mode = sl.SENSING_MODE.FILL # fill all holes in depth sensing
+    runtime_parameters.enable_fill_mode = True
     # Setting the depth confidence parameters
     runtime_parameters.confidence_threshold = 100 # NOT SURE WHAT THIS DOES
-    runtime_parameters.textureness_confidence_threshold = 100 # NOT SURE WHAT THIS DOES
+    runtime_parameters.texture_confidence_threshold = 100 # NOT SURE WHAT THIS DOES
 
     return zed, runtime_parameters
 
@@ -266,7 +267,7 @@ def main():
     depth = sl.Mat()
 
     try:
-        corners = get_corners(zed,runtime_parameters,3)
+        corners = get_corners(zed,runtime_parameters,3,p)
     except:
         print('Failed to find corners, quitting gracefully. Got the exception:')
         traceback.print_exc(file=sys.stdout)
@@ -285,13 +286,13 @@ def main():
             lego /= 9.6e-3 # 9.6 mm per stud
             # print(np.around(lego))
             lego[~np.isfinite(lego)] = 0.
-            lego = lego.astype(np.int)
+            lego = lego.astype(np.int64)
 
             # print(lego.tolist()[0])
             # sending post request and saving response as response object
             r = requests.post(url = server_url + '/post_zed_data_to_server', data = {
                 'depths': json5.dumps(lego.tolist()),
-                'colours': json5.dumps(colours.astype(np.int).tolist())
+                'colours': json5.dumps(colours.astype(np.int64).tolist())
                 })
             print("The server responded with: " + r.text)
         except:
