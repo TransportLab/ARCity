@@ -30,35 +30,36 @@ import time
 
 debug = False
 # debug = True
-server_url = 'http://localhost:5000/'
+server_url = "http://localhost:5000/"
+
 
 def order_points(pts):
     # initialzie a list of coordinates that will be ordered
     # such that the first entry in the list is the top-left,
     # the second entry is the top-right, the third is the
     # bottom-right, and the fourth is the bottom-left
-    rect = np.zeros((4, 2), dtype = "float32")
+    rect = np.zeros((4, 2), dtype="float32")
     # the top-left point will have the smallest sum, whereas
     # the bottom-right point will have the largest sum
-    s = pts.sum(axis = 1)
+    s = pts.sum(axis=1)
     rect[0] = pts[np.argmin(s)]
     rect[2] = pts[np.argmax(s)]
     # now, compute the difference between the points, the
     # top-right point will have the smallest difference,
     # whereas the bottom-left will have the largest difference
-    diff = np.diff(pts, axis = 1)
+    diff = np.diff(pts, axis=1)
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
     # return the ordered coordinates
     return rect
+
 
 def four_point_transform(image, pts, grid):
     # obtain a consistent order of the points and unpack them
     # individually
     rect = order_points(pts)
 
-
-    if grid == 'native':
+    if grid == "native":
         (tl, tr, br, bl) = rect
         # compute the width of the new image, which will be the
         # maximum distance between bottom-right and bottom-left
@@ -81,68 +82,73 @@ def four_point_transform(image, pts, grid):
     # (i.e. top-down view) of the image, again specifying points
     # in the top-left, top-right, bottom-right, and bottom-left
     # order
-    dst = np.array([
-        [0, 0],
-        [maxWidth - 1, 0],
-        [maxWidth - 1, maxHeight - 1],
-        [0, maxHeight - 1]], dtype = "float32")
+    dst = np.array(
+        [[0, 0], [maxWidth - 1, 0], [maxWidth - 1, maxHeight - 1], [0, maxHeight - 1]],
+        dtype="float32",
+    )
     # compute the perspective transform matrix and then apply it
     M = cv2.getPerspectiveTransform(rect, dst)
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
     # return the warped image
     return warped
 
-def get_corners(zed,runtime_parameters,N,p):
+
+def get_corners(zed, runtime_parameters, N, p):
     i = 0
     image = sl.Mat()
-    out = np.zeros([N,4,2])
+    out = np.zeros([N, 4, 2])
     while i < N:
         # A new image is available if grab() returns SUCCESS
         if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
             # Retrieve left image
             zed.retrieve_image(image, sl.VIEW.LEFT)
             # Retrieve depth map. Depth is aligned on the left image
-            #zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
+            # zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
             # Retrieve colored point cloud. Point cloud is aligned on the left image.
-            #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+            # zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
 
             im = image.get_data()
             if debug:
                 # cv2.imshow('frame',im)
                 # if cv2.waitKey(1) & 0xFF == ord('q'):
-                    # break
-                plt.imsave('frame.png',im)
-            hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
+                # break
+                plt.imsave("frame.png", im)
+            hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)  # Convert BGR to HSV
 
             # Threshold the HSV image to get only orange colors
-            mask = cv2.inRange(hsv,
-                               np.array(p['colours'][p['corner_colour']]['lower']),
-                               np.array(p['colours'][p['corner_colour']]['upper']))
+            mask = cv2.inRange(
+                hsv,
+                np.array(p["colours"][p["corner_colour"]]["lower"]),
+                np.array(p["colours"][p["corner_colour"]]["upper"]),
+            )
 
             # Bitwise-AND mask and original image
-            res = cv2.bitwise_and(im,im, mask=mask)
+            res = cv2.bitwise_and(im, im, mask=mask)
 
-            contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(
+                mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
             cnts = sorted(contours, key=cv2.contourArea)
 
-            these_corners = np.zeros([4,2])
-            print('Found ' + str(len(cnts)) + ' possible corners')
+            these_corners = np.zeros([4, 2])
+            print("Found " + str(len(cnts)) + " possible corners")
             for j in range(4):
-                cnt = cnts[-1-j]
+                cnt = cnts[-1 - j]
                 M = cv2.moments(cnt)
-                cx = int(M['m10']/M['m00'])
-                cy = int(M['m01']/M['m00'])
-                if debug: im = cv2.circle(mask, (cx,cy), 10, (255,0,0), 3)
-                these_corners[j] = [cx,cy]
-            #these_corners_sorted = sorted(these_corners)#, key=lambda x: these_corners[x,0]**2 + these_corners[x,1]**2)
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                if debug:
+                    im = cv2.circle(mask, (cx, cy), 10, (255, 0, 0), 3)
+                these_corners[j] = [cx, cy]
+            # these_corners_sorted = sorted(these_corners)#, key=lambda x: these_corners[x,0]**2 + these_corners[x,1]**2)
             these_corners_sorted = order_points(these_corners)
             out[i] = these_corners_sorted
 
             if debug:
                 # cv2.imshow('frame',im)
-                cv2.imshow('mask',mask)
+                cv2.imshow("mask", mask)
                 # cv2.imshow('res',res)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
             # # Get and print distance value in mm at the center of the image
             # # We measure the distance camera - object using Euclidean distance
@@ -166,61 +172,68 @@ def get_corners(zed,runtime_parameters,N,p):
             #     print("Your camera is probably too close to the scene, please move it backwards.\n")
             # sys.stdout.flush()
 
-    averaged_corners = np.mean(np.array(out),axis=0)
-    #print(averaged_corners)
-    #np.savetxt('corners.txt',averaged_corners)
+    averaged_corners = np.mean(np.array(out), axis=0)
+    # print(averaged_corners)
+    # np.savetxt('corners.txt',averaged_corners)
     return averaged_corners
 
-def get_warped_data(image,depths,pts,grid,colour,height):
+
+def get_warped_data(image, depths, pts, grid, colour, height):
     new_colour = four_point_transform(image.get_data(), pts, grid)
     new_height = four_point_transform(depths.get_data(), pts, grid)
 
     alpha = 0.7
-    colour = alpha*colour + (1-alpha)*new_colour
-    height = alpha*height + (1-alpha)*new_height
+    colour = alpha * colour + (1 - alpha) * new_colour
+    height = alpha * height + (1 - alpha) * new_height
 
     return colour, height
 
-def map_colours_to_brick_types(im,p):
-    # WARNING: UNTESTED. JUST FOR ILLUSTRATION PURPOSES.
-    hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV) # Convert BGR to HSV
-    brick_types = np.zeros([im.shape[0],im.shape[1]])
 
-    for c in p['colours']: # go through each colour
+def map_colours_to_brick_types(im, p):
+    # WARNING: UNTESTED. JUST FOR ILLUSTRATION PURPOSES.
+    hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)  # Convert BGR to HSV
+    brick_types = np.zeros([im.shape[0], im.shape[1]])
+
+    for c in p["colours"]:  # go through each colour
         # Threshold the HSV image to get only orange colors
-        mask = cv2.inRange(hsv,
-                            p['colours'][c]['lower'],
-                            p['colours'][c]['upper'])
-        brick_types[mask==255] = p['colours'][c]['index']
+        mask = cv2.inRange(hsv, p["colours"][c]["lower"], p["colours"][c]["upper"])
+        brick_types[mask == 255] = p["colours"][c]["index"]
 
     return brick_types
 
+
 def initialise_camera():
-    zed = sl.Camera() # Create a Camera object
+    zed = sl.Camera()  # Create a Camera object
 
     init_params = sl.InitParameters()
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA
-    init_params.coordinate_units = sl.UNIT.METER  # Use meter units (for depth measurements)
+    init_params.coordinate_units = (
+        sl.UNIT.METER
+    )  # Use meter units (for depth measurements)
     init_params.camera_resolution = sl.RESOLUTION.HD2K
     # init_params.camera_resolution = sl.RESOLUTION.HD720
 
-    err = zed.open(init_params) # Open the camera
+    err = zed.open(init_params)  # Open the camera
 
     if err != sl.ERROR_CODE.SUCCESS:
         exit(1)
-    else: print('Zed camera is alive')
+    else:
+        print("Zed camera is alive")
 
     runtime_parameters = sl.RuntimeParameters()
     # runtime_parameters.sensing_mode = sl.SENSING_MODE.STANDARD  # Use STANDARD sensing mode
     # runtime_parameters.sensing_mode = sl.SENSING_MODE.FILL # fill all holes in depth sensing
     runtime_parameters.enable_fill_mode = True
     # Setting the depth confidence parameters
-    runtime_parameters.confidence_threshold = 100 # NOT SURE WHAT THIS DOES
-    runtime_parameters.texture_confidence_threshold = 100 # NOT SURE WHAT THIS DOES
+    runtime_parameters.confidence_threshold = 100  # NOT SURE WHAT THIS DOES
+    runtime_parameters.texture_confidence_threshold = 100  # NOT SURE WHAT THIS DOES
 
     return zed, runtime_parameters
 
-def get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,heights):
+
+def get_zed_frame(
+    zed, runtime_parameters, image, depth, corners, grid, colours, heights
+):
     # A new image is available if grab() returns SUCCESS
     if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
         # Retrieve left image
@@ -228,11 +241,13 @@ def get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,height
         # Retrieve depth map. Depth is aligned on the left image
         zed.retrieve_measure(depth, sl.MEASURE.DEPTH)
         # Retrieve colored point cloud. Point cloud is aligned on the left image.
-        #zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+        # zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
         try:
-            colours,heights = get_warped_data(image,depth,corners,grid,colours,heights)
+            colours, heights = get_warped_data(
+                image, depth, corners, grid, colours, heights
+            )
         except:
-            print('Failed to find lego bricks')
+            print("Failed to find lego bricks")
             traceback.print_exc(file=sys.stdout)
             zed.close()
             exit(1)
@@ -249,61 +264,69 @@ def get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,height
         #         exit(1)
         return colours, heights
     else:
-        print('ZED CAMERA FAILED TO GET A FRAME')
+        print("ZED CAMERA FAILED TO GET A FRAME")
         return -1, -1
 
 
 def main():
     zed, runtime_parameters = initialise_camera()
 
-    p = json5.loads(open('../../params.json5').read())
+    p = json5.loads(open("../../params.json5").read())
 
-    grid = [25,25] # how many lego studs are available in horizontal and vertical direction
+    grid = [
+        25,
+        25,
+    ]  # how many lego studs are available in horizontal and vertical direction
     # grid = 'native' # get the best image possible
 
     heights = np.zeros(grid)
-    colours = np.zeros([grid[0],grid[1],4])
+    colours = np.zeros([grid[0], grid[1], 4])
     image = sl.Mat()
     depth = sl.Mat()
 
     try:
-        corners = get_corners(zed,runtime_parameters,3,p)
+        corners = get_corners(zed, runtime_parameters, 3, p)
     except:
-        print('Failed to find corners, quitting gracefully. Got the exception:')
+        print("Failed to find corners, quitting gracefully. Got the exception:")
         traceback.print_exc(file=sys.stdout)
         zed.close()
         exit(1)
 
     while True:
         try:
-            time.sleep(1) # wait 1 second
-            colours, heights = get_zed_frame(zed,runtime_parameters,image,depth,corners,grid,colours,heights)
+            time.sleep(1)  # wait 1 second
+            colours, heights = get_zed_frame(
+                zed, runtime_parameters, image, depth, corners, grid, colours, heights
+            )
 
             # remove offset to plane from heights and convert to studs
-            base_offset = 1.1 # m
+            base_offset = 1.1  # m
             # base_offset = (height[0,0] + height[0,-1] + height[-1,0] + height[-1,-1])/4. + 8e-3
-            lego = base_offset - heights # pretty bloody unlikely to work
-            lego /= 9.6e-3 # 9.6 mm per stud
+            lego = base_offset - heights  # pretty bloody unlikely to work
+            lego /= 9.6e-3  # 9.6 mm per stud
             # print(np.around(lego))
-            lego[~np.isfinite(lego)] = 0.
+            lego[~np.isfinite(lego)] = 0.0
             lego = lego.astype(np.int64)
 
             # print(lego.tolist()[0])
             # sending post request and saving response as response object
-            r = requests.post(url = server_url + '/post_zed_data_to_server', data = {
-                'depths': json5.dumps(lego.tolist()),
-                'colours': json5.dumps(colours.astype(np.int64).tolist())
-                })
+            r = requests.post(
+                url=server_url + "/post_zed_data_to_server",
+                data={
+                    "depths": json5.dumps(lego.tolist()),
+                    "colours": json5.dumps(colours.astype(np.int64).tolist()),
+                },
+            )
             print("The server responded with: " + r.text)
         except:
-            print('Failed to get frame, quitting gracefully. Got the exception:')
+            print("Failed to get frame, quitting gracefully. Got the exception:")
             traceback.print_exc(file=sys.stdout)
             zed.close()
             exit(1)
 
-
     # Close the camera
     zed.close()
+
 
 if __name__ == "__main__":
     main()

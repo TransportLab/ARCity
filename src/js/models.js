@@ -4,7 +4,7 @@ let car_models = [];
 
 export async function load_model(file,rot,scale,R) {
     const r = await new GLTFLoader()
-    .loadAsync( '../models/' + file)
+    .loadAsync( 'assets/models/' + file)
     .then( function ( gltf ) {
         gltf.scene.traverse( function( node ) {
             if ( node.isMesh ) { node.castShadow = true; }
