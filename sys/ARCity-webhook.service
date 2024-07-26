@@ -1,0 +1,15 @@
+[Unit]
+Description=Startup webhook
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=smartcity
+WorkingDirectory=/opt/ARCity/
+ExecStart=/opt/ARCity/sys/webhook.sh
+ExecStartPost=/opt/ARCity/sys/start_kiosk.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

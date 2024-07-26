@@ -1,0 +1,8 @@
+[Unit]
+Description=Auto Git Pull Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/ARCity/auto-pull.sh
+WorkingDirectory=/opt/ARCity/
