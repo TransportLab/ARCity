@@ -45,6 +45,10 @@ response = requests.get(static_map_url)
 if response.status_code == 200:
     image = Image.open(io.BytesIO(response.content))
     image.save('roi_image.png')
+
+    upscaled_image = image.resize((3840, 2160), Image.Resampling.NEAREST)
+    upscaled_image.save('roi_image_4k.png')
+
     print("Image saved as 'roi_image.png'.")
 else:
     print(f"Failed to fetch image (status code: {response.status_code}).")
