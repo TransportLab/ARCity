@@ -28,9 +28,12 @@ import json5
 import traceback
 import time
 
+
+p = json5.loads(open("../../params.json5").read())
 debug = False
 # debug = True
-server_url = "http://localhost:5000/"
+# server_url = "http://localhost:5000/"
+
 
 
 def order_points(pts):
@@ -274,8 +277,8 @@ def main():
     p = json5.loads(open("../../params.json5").read())
 
     grid = [
-        25,
-        25,
+        p.W,
+        p.H,
     ]  # how many lego studs are available in horizontal and vertical direction
     # grid = 'native' # get the best image possible
 
@@ -300,10 +303,9 @@ def main():
             )
 
             # remove offset to plane from heights and convert to studs
-            base_offset = 1.1  # m
             # base_offset = (height[0,0] + height[0,-1] + height[-1,0] + height[-1,-1])/4. + 8e-3
-            lego = base_offset - heights  # pretty bloody unlikely to work
-            lego /= 9.6e-3  # 9.6 mm per stud
+            lego = p.base_offset - heights  # pretty bloody unlikely to work
+            lego /= (p.brick_height*1e-3)  # 9.6 mm per stud
             # print(np.around(lego))
             lego[~np.isfinite(lego)] = 0.0
             lego = lego.astype(np.int64)
@@ -311,7 +313,7 @@ def main():
             # print(lego.tolist()[0])
             # sending post request and saving response as response object
             r = requests.post(
-                url=server_url + "/post_zed_data_to_server",
+                url=p.server_url + "/post_zed_data_to_server",
                 data={
                     "depths": json5.dumps(lego.tolist()),
                     "colours": json5.dumps(colours.astype(np.int64).tolist()),

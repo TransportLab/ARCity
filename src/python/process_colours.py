@@ -6,7 +6,6 @@ import json5
 server_url = "http://localhost:5000/"
 
 p = json5.loads(open("../../params.json5", "r").read())
-# print(p['colours'][p['corner_colour']]['lower'])
 
 for c in p["colours"]:
     print(c)
