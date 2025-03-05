@@ -81,7 +81,7 @@ bbox = (
     corners["ne"]["lat"],
 )
 
-custom_filter = '["highway"~"motorway|motorway_link|trunk"]'
+custom_filter = '["highway"~"motorway|trunk"]'
 
 # Download the road network from OSM
 print("Downloading the road network from OSM...")

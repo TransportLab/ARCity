@@ -34,18 +34,24 @@ function init() {
     clock = new THREE.Clock();
     scene = new THREE.Scene();
 
-    var fov_vertical = 2*Math.atan(p.projector_aspect_ratio/p.projector_throw_ratio/2.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
-    camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
-
+    if (p.screen_type === 'projector') {
+        var fov_vertical = 2*Math.atan(p.projector_aspect_ratio/p.projector_throw_ratio/2.)*(180/Math.PI); // approx 59 degrees for a 0.5 throw ratio
+        camera = new THREE.PerspectiveCamera( fov_vertical, window.innerWidth/window.innerHeight, 0.1, 1000 ); // vertical FOV angle, aspect ratio, near, far
+    }
+    else if (p.screen_type === 'monitor') {
+        camera = new THREE.OrthographicCamera( -p.W, p.W, p.H, -p.H, 0.1, 2000 );
+    }
+    
     var ambient_light = new THREE.AmbientLight( 0xFFFFFF ); // white light
     ambient_light.intensity = 0.1;
     scene.add( ambient_light );
 
-    sun = new THREE.PointLight( 0xFFFFFF, 1, 0, 2 ); // white light
+    sun = new THREE.PointLight( 0xFFFFFF, 10000, 0, 2 ); // white light
     // sun.intensity = 0;
     sun.castShadow = true;
-    sun.shadow.mapSize.width = 2*1024;
-    sun.shadow.mapSize.height = 2*1024;
+    sun.shadow.mapSize.width = 4*1024;
+    sun.shadow.mapSize.height = 4*1024;
+    sun.shadow.bias = -0.0005;
     scene.add( sun );
 
     if ( p.show_sun ) {
@@ -64,6 +70,7 @@ function init() {
 
     renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Enable PCF soft shadows
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -71,18 +78,25 @@ function init() {
 
     if ( urlParams.has('debug') ) {
         console.log(p);
-        camera.position.z = 30;
+        camera.position.z = 3*Math.max(p.W,p.H);
         var controls = new OrbitControls( camera, renderer.domElement );
     }
     else {
-        camera.position.z = p.projector_plane_distance_studs;
-        camera.position.y = -p.projector_plane_distance_studs/p.projector_throw_ratio/p.projector_aspect_ratio; // vertical offset
+        if (p.screen_type === 'projector') {
+            camera.position.z = p.projector_plane_distance_studs;
+            camera.position.y = -p.projector_plane_distance_studs/p.projector_throw_ratio/p.projector_aspect_ratio; // vertical offset
+        }
+        else if (p.screen_type === 'monitor') {
+            camera.position.z = 3*Math.max(p.W,p.H);
+        }
     }
+    
 
     var geometry = new THREE.PlaneGeometry( 2*p.W, 2*p.H,Math.floor(2*p.W*10),Math.floor(2*p.H*10));
     base_material = new THREE.MeshStandardMaterial( {color: 0xFFFFFF, side: THREE.DoubleSide} );
     base_plane = new THREE.Mesh( geometry, base_material );
     base_plane.castShadow = true;
+    base_plane.receiveShadow = true;
     scene.add( base_plane );
 
     road_material = new THREE.MeshStandardMaterial({
@@ -122,7 +136,7 @@ function init() {
         });
     }
 
-    add_async_models();
+    if (p.show_cars) { add_async_models() }
     ROADS.update_traffic_randomly(p.min_speed,p.max_speed,base_plane);
     animate();
 
@@ -138,32 +152,28 @@ function animate() {
         t_prev = t;
         // on new heights from server:
         // ROADS.update_displacement_map(base_material,server_url,W,H);
-        ROADS.fake_update_displacement_map(base_material,p.server_url,p.W,p.H);
+        // ROADS.fake_update_displacement_map(base_material,p.server_url,p.W,p.H,p.road_width,p.block_length);
         ROADS.update_traffic_randomly(p.min_speed,p.max_speed,base_plane);
     }
 
     sun.position.x = 2*p.W*Math.sin(t*2.*Math.PI/p.daily_period);
     sun.position.z = 2*p.W*Math.cos(t*2.*Math.PI/p.daily_period);
-    // base_material.emissive = road_lut.getColor( 0.1 + 0.5*Math.abs(Math.sin(t*2.*Math.PI/p.daily_period)) );
-    // road_material.emissiveIntensity = -Math.cos(t*2.*Math.PI/p.daily_period);
-    // if ( road_material.emissiveIntensity < 0 ) { road_material.emissiveIntensity = 0;}
-    // console.log(road_material.emissiveIntensity);
-    // console.log(sun.rotation)
 
-    // var speed = 2; // vehicle speed
-    cars.forEach( function(car, index) {
-        if ( car.isturning ) {
-            MODELS.turn_car(car,p.road_width);
-        }
-        else {
-            var edge = ROADS.G.getEdgeData(car.nodes[0],car.nodes[1]);
-            ROADS.check_for_intersection(car,p.road_width)
-            if      ( car.orientation === 'h' ) { car.position.x += car.direction*edge.speed*dt; }
-            else if ( car.orientation === 'v' ) { car.position.y += car.direction*edge.speed*dt; }
-            else { console.log('Orientation not defined. Not moving.'); }
+    if ( p.show_cars ) {
+        cars.forEach( function(car, index) {
+            if ( car.isturning ) {
+                MODELS.turn_car(car,p.road_width);
+            }
+            else {
+                var edge = ROADS.G.getEdgeData(car.nodes[0],car.nodes[1]);
+                ROADS.check_for_intersection(car,p.road_width)
+                if      ( car.orientation === 'h' ) { car.position.x += car.direction*edge.speed*dt; }
+                else if ( car.orientation === 'v' ) { car.position.y += car.direction*edge.speed*dt; }
+                else { console.log('Orientation not defined. Not moving.'); }
 
-        }
-    });
+            }
+        });
+    }
 
     requestAnimationFrame( animate );
     renderer.render( scene, camera );

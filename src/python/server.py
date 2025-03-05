@@ -77,8 +77,8 @@ colours = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 # import read_zed
-nx = 272
-ny = int(272/(16/9))
+nx = 72
+ny = int(nx / (16 / 9))
 depths = np.random.rand(nx, ny)
 colours = np.random.rand(nx, ny)
 colours[depths == 0] = 0

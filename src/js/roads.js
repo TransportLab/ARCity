@@ -12,6 +12,34 @@ lut.setMax(3);
 let links = [];
 export let G;
 
+let heights = [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,2,2,2,0,0],
+    [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,2,2,2,0,0],
+    [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
+    [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
+    [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,1,1,2,0,0],
+    [0,0,4,4,4,4,0,0,2,2,3,3,0,0,3,1,1,1,0,0,1,1,2,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,2,2,2,2,0,0,2,2,2,2,0,0,3,3,3,3,0,0,1,1,1,0,0],
+    [0,0,2,2,2,2,0,0,2,2,2,2,0,0,3,3,3,3,0,0,1,1,1,0,0],
+    [0,0,2,2,2,2,0,0,2,2,2,2,0,0,2,2,1,1,0,0,1,1,1,0,0],
+    [0,0,2,2,2,2,0,0,1,1,1,1,0,0,2,2,1,1,0,0,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
+    [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
+    [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
+    [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+]
+
 function update_traffic_randomly(min_speed,max_speed,parent) {
     G.edges(true).forEach( function(edge, index) {
         var speed = min_speed + Math.random()*(max_speed - min_speed);
@@ -55,6 +83,7 @@ function generate_regular_roads_networkx(W,H,R,B,parent,road_material,line_mater
     // var G = new jsnx.Graph();
     var m = Math.ceil((2*W-2*R)/(B+2*R))+1; // number of blocks in x direction
     var n = Math.ceil((2*H-2*R)/(B+2*R))+1; // number of blocks in y direction
+
     G = NETWORKX.grid2dGraph(m,n);
 
     var i = 0; var x = -W + R;
@@ -77,11 +106,14 @@ function generate_regular_roads_networkx(W,H,R,B,parent,road_material,line_mater
 
     G.edges(true).forEach( function(edge, index) {
         let zoff = 0.1;//*Math.random();
-        let pts = [[G.node.get(edge[0]).x, G.node.get(edge[0]).y, zoff],
-                   [G.node.get(edge[1]).x, G.node.get(edge[1]).y, zoff]];
+        let pts = [
+            [G.node.get(edge[0]).x, G.node.get(edge[0]).y, zoff],
+            [G.node.get(edge[1]).x, G.node.get(edge[1]).y, zoff]
+        ];
         add_road_segment(road_segments,pts,R,road_material);
         add_line_marking_segment(line_markings,pts,line_material);
     });
+    console.log(road_segments)
     parent.add( road_segments );
     parent.add( line_markings );
     // console.log(parent)
@@ -208,48 +240,35 @@ function update_displacement_map(base_material,server_url,W,H) {
     });
 }
 
-function fake_update_displacement_map(base_material,server_url,W,H) {
-    // var width = Math.floor(2*W);
-    // var height = Math.floor(2*H);
+function fake_update_displacement_map(base_material,server_url,W,H,R,B) {
+    var m = Math.ceil((2*W-2*R)/(B+2*R))+1; // number of blocks in x direction
+    var n = Math.ceil((2*H-2*R)/(B+2*R))+1; // number of blocks in y direction
 
-    var scale = 255*(9.6/8.0) // to get height in stud widths (threejs in units of stud witdth)
-    var data;
-    data = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,2,2,2,0,0],
-            [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,2,2,2,0,0],
-            [0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,1,1,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
-            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,2,2,2,0,0],
-            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,1,1,1,1,0,0,1,1,2,0,0],
-            [0,0,4,4,4,4,0,0,2,2,3,3,0,0,3,1,1,1,0,0,1,1,2,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,2,2,2,2,0,0,2,2,2,2,0,0,3,3,3,3,0,0,1,1,1,0,0],
-            [0,0,2,2,2,2,0,0,2,2,2,2,0,0,3,3,3,3,0,0,1,1,1,0,0],
-            [0,0,2,2,2,2,0,0,2,2,2,2,0,0,2,2,1,1,0,0,1,1,1,0,0],
-            [0,0,2,2,2,2,0,0,1,1,1,1,0,0,2,2,1,1,0,0,1,1,1,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
-            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
-            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
-            [0,0,1,1,1,1,0,0,2,2,2,2,0,0,1,1,1,1,0,0,1,1,1,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
+    var arr = new Uint8Array( 4*W*H );
 
-    let width = data.length;
-    let height = data[0].length; // maybe wrong way around
-
-    data = data.reverse().flat()
-    var arr = new Uint8Array( 4*data.length );
-    for ( var i = 0; i < data.length; i ++ ) {
-        arr[ i*4 ] = data[i]; // just red channel
+    var i = 0; var x = -W + R;
+    while ( i < m ) {
+        var j = 0; var y = -H + R;
+        while ( j < n) {
+            let this_height = Math.floor(Math.random()*5);
+            for ( var k=0;k<B-2*R;k++ ) {
+                for ( var l=0;l<B-2*R;l++ ) {
+                    arr[4*((i*B + k)*W+j*B+l)] = this_height;
+                }
+            }
+            j += 1
+            if ( y + B + 2*R > H-R ) { y = H - R; }
+            else { y += B + 2*R; }
+            // console.log(x,y)
+        }
+        i += 1
+        if ( x + B + 2*R > W-R ) { x = W - R; }
+        else { x += B + 2*R; }
     }
 
-    var texture = new THREE.DataTexture( arr, width, height, THREE.RGBAFormat );
+    var scale = 255*(9.6/8.0) // to get height in stud widths (threejs in units of stud witdth)
+    
+    var texture = new THREE.DataTexture( arr, W, H, THREE.RGBAFormat );
     texture.needsUpdate = true;
 
     base_material.displacementMap = texture;
