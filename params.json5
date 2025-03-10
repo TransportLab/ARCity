@@ -48,6 +48,8 @@
     line_width : 0.5, // width of the road on the map
     osm_filter : '["highway"~"motorway|trunk"]',
 
-    base_offset: 0.6, // offset of the base of the bricks
+    base_offset: 1.6, // offset of the base of the bricks
     imac_url: "http://192.168.137.134:5000",
+
+    exp_smooth : 0.1, // exponential smoothing factor for height
 }

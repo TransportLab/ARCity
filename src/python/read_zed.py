@@ -57,7 +57,7 @@ def order_points(pts):
     return rect
 
 
-def four_point_transform(image, pts, grid, debug=False):
+def four_point_transform(image, pts, grid, debug=True):
     # obtain a consistent order of the points and unpack them
     # individually
     # rect = order_points(pts)
@@ -119,8 +119,8 @@ def four_point_transform(image, pts, grid, debug=False):
     # return the warped image
     im = np.array(image)
     crop = im[p["corners"][0][0]:p["corners"][2][0], p["corners"][0][1]:p["corners"][1][1]]
-    dx = crop.shape[1] / maxWidth
-    dy = crop.shape[0] / maxHeight
+    dx = crop.shape[1] / p["W"]
+    dy = crop.shape[0] / p["H"]
 
     if len(crop.shape) == 2:
         colours = np.zeros([maxWidth, maxHeight])
@@ -132,7 +132,7 @@ def four_point_transform(image, pts, grid, debug=False):
             y = int(j * dy)
             colours[i, j] = np.median(crop[y:y+int(dy), x:x+int(dx)], axis=(0, 1))
     if debug:
-        plt.imsave("crop.png", crop)
+        plt.imsave(f"crop_{len(crop.shape)}.png", crop)
 
     return colours
 
@@ -292,6 +292,8 @@ def initialise_camera():
     # Setting the depth confidence parameters
     runtime_parameters.confidence_threshold = 95  # NOT SURE WHAT THIS DOES
     runtime_parameters.texture_confidence_threshold = 100  # NOT SURE WHAT THIS DOES
+    # runtime_parameters.depth_minimum_distance = 1.5  #; // Set the minimum depth perception distance to 15cm
+    # runtime_parameters.depth_maximum_distance = 3.0
 
     return zed, runtime_parameters
 
@@ -354,6 +356,7 @@ def main():
         zed.close()
         exit(1)
 
+    smoothed = False
     while True:
         try:
             time.sleep(1)  # wait 1 second
@@ -365,11 +368,18 @@ def main():
 
             # remove offset to plane from heights and convert to studs
             # base_offset = (height[0,0] + height[0,-1] + height[-1,0] + height[-1,-1])/4. + 8e-3
-            lego = p["base_offset"] - heights  # pretty bloody unlikely to work
+            lego = np.median(heights, axis=(0, 1)) - heights
             lego /= p["brick_height"] * 1e-3  # 9.6 mm per stud
             # print(np.around(lego))
             lego[~np.isfinite(lego)] = 0.0
+            lego[lego < 0] = 0.0
+            lego[lego > 5] = 5.0
             lego = lego.astype(np.int64)
+
+            if isinstance(smoothed, np.ndarray):
+                smoothed = lego
+            else:
+                smoothed = (1-p["exp_smooth"]) * smoothed + p["exp_smooth"] * lego
 
             # print(lego.tolist()[0])
             # sending post request and saving response as response object
