@@ -7,6 +7,7 @@ from geopy.distance import geodesic
 from simplify_OSM_network import buffer_to_centerline, merge_two_edge_nodes
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import requests
 
 ox.settings.log_console = True
 ox.settings.max_query_area_size = 25000000000
@@ -86,6 +87,49 @@ def draw_image(keys, p, edges):
     root.after(1000, draw_image, keys, p, edges)
 
 
+def gaussian_kernel(size: int, sigma: float) -> np.ndarray:
+    """Generate a 2D Gaussian kernel using only NumPy."""
+    ax = np.arange(-(size // 2), size // 2 + 1)
+    xx, yy = np.meshgrid(ax, ax)
+    kernel = np.exp(-(xx**2 + yy**2) / (2 * sigma**2))
+    kernel /= kernel.sum()  # Normalize so sum equals 1
+    return kernel
+
+
+def draw_with_convolved_traffic(keys, p, edges):
+    plt.figure(1)
+    fg = plt.imread("fg_mask.png")
+    fg = fg[:, :, 0]  # Extract one channel
+    fg = fg / 255  # Normalize to [0, 1]
+    fg = 1-fg  # Invert mask
+    bg = plt.imread("bg_mask.png")
+
+    heights = requests.get("http://localhost:5000/get_depths_from_server").json()
+
+    lego = heights > 0
+    kernel = gaussian_kernel(5, 1)
+
+    traffic = np.convolve(lego, kernel, mode="same")
+    traffic *= fg  # Apply mask
+
+    plt.imshow(bg, alpha=1)
+    plt.imshow(traffic, cmap="hot", alpha=0.5)
+
+    # Remove axis labels for a clean look
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_frame_on(False)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    # ax.set_aspect("equal")
+    # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
+    ax.set_aspect(0.974)  # HACK: Fix latitude distortion
+
+    canvas.draw()  # Update the figure
+
+    # Repeat update every 1000 ms (1 second)
+    root.after(1000, draw_with_convolved_traffic, keys, p, edges)
+
+
 def get_map(p):
     bbox = (
         p["map"]["sw"]["lng"],
@@ -113,6 +157,47 @@ def get_map(p):
     # edges = buffer_to_centerline(edges, buffer_width=10)
 
     return edges
+
+def make_mask(p, edges):
+    fig = plt.figure(2, figsize=p["fig_size"], dpi=p["dpi"])
+    ax = plt.subplot(111)
+    MAPBOX_STYLE = f"https://api.mapbox.com/styles/v1/{keys['mapbox']['style']}/tiles/{{z}}/{{x}}/{{y}}{{r}}?access_token={keys['mapbox']['token']}"
+
+    ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=1, zoom=p["map"]["zoom"])
+    # Remove axis labels for a clean look
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_frame_on(False)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    # ax.set_aspect("equal")
+    # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
+    ax.set_aspect(0.974)  # HACK: Fix latitude distortion
+
+    # fig.savefig("OSM.png")
+    
+    plt.savefig("bg_mask.png", transparent=False)
+
+    plt.clf()
+    ax = plt.subplot(111)
+
+    ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=0, zoom=p["map"]["zoom"])
+    edges.plot(ax=ax, edgecolor="black", linewidth=p["line_width"])
+
+    # Remove axis labels for a clean look
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_frame_on(False)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    # ax.set_aspect("equal")
+    # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
+    ax.set_aspect(0.974)  # HACK: Fix latitude distortion
+
+    # fig.savefig("OSM.png")
+    
+    plt.savefig("fg_mask.png", transparent=False)
+
+
+
 
 
 if __name__ == "__main__":
@@ -144,5 +229,9 @@ if __name__ == "__main__":
     widget.pack(fill=tk.BOTH, expand=True)
     widget.configure(bg="black", highlightthickness=0)
 
-    draw_image(keys, p, edges)
+    make_mask(fig, p, edges)
+
+    # draw_image(keys, p, edges)
+
+    draw_with_convolved_traffic(p, edges)
     root.mainloop()
