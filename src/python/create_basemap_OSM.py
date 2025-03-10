@@ -4,9 +4,31 @@ import json5
 import matplotlib.pyplot as plt
 import contextily as ctx
 from geopy.distance import geodesic
+from simplify_OSM_network import buffer_to_centerline, merge_two_edge_nodes
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 ox.settings.log_console = True
 ox.settings.max_query_area_size = 25000000000
+
+
+def calculate_defaults(p):
+    p["fig_size"] = (p["screen_resolution"][0] / p["dpi"], p["screen_resolution"][1] / p["dpi"])
+
+    p["aspect_ratio"] = p["screen_resolution"][0] / p["screen_resolution"][1]
+
+    sw_lat, sw_lng = calculate_sw_coords(
+        p["map"]["ne"]["lat"],
+        p["map"]["ne"]["lng"],
+        p["aspect_ratio"],
+        p["map"]["width_m"],
+    )
+
+    # print(f"SW Latitude: {sw_lat}, SW Longitude: {sw_lng}")
+    p["map"]["sw"]["lat"] = sw_lat
+    p["map"]["sw"]["lng"] = sw_lng
+
+    return p
 
 
 def calculate_sw_coords(ne_lat, ne_lng, aspect_ratio, width_m):
@@ -27,88 +49,100 @@ def calculate_sw_coords(ne_lat, ne_lng, aspect_ratio, width_m):
     height_m = width_m / aspect_ratio
 
     # Move south by height_m (latitude change)
-    sw_lat_lng = geodesic(meters=height_m).destination(
-        (ne_lat, ne_lng), 180
-    )  # 180° = due south
+    sw_lat_lng = geodesic(meters=height_m).destination((ne_lat, ne_lng), 180)  # 180° = due south
     sw_lat = sw_lat_lng.latitude  # Extract latitude
 
     # Move west by width_m (longitude change)
-    sw_lat_lng = geodesic(meters=width_m).destination(
-        (sw_lat, ne_lng), 270
-    )  # 270° = due west
+    sw_lat_lng = geodesic(meters=width_m).destination((sw_lat, ne_lng), 270)  # 270° = due west
     sw_lng = sw_lat_lng.longitude  # Extract longitude
 
     return sw_lat, sw_lng
 
 
-# Mapbox API credentials
-with open("keys.json5") as f:
-    keys = json5.load(f)
-    access_token = keys["mapbox"]["token"]
-    map_id = keys["mapbox"]["style"]
+def draw_image(keys, p, edges):
 
-# screen_resolution = (3840, 2160)
-screen_resolution = (2560, 1440)
-dpi = 300
-fig_size = (screen_resolution[0] / dpi, screen_resolution[1] / dpi)
+    MAPBOX_STYLE = f"https://api.mapbox.com/styles/v1/{keys['mapbox']['style']}/tiles/{{z}}/{{x}}/{{y}}{{r}}?access_token={keys['mapbox']['token']}"
 
-aspect_ratio = screen_resolution[0] / screen_resolution[1]
+    # edges.plot(ax=ax, edgecolor="white", linewidth=p["line_width"])
+    colours = ["red", "green", "orange"]
+    for i in range(len(edges)):
+        edges.iloc[[i]].plot(ax=ax, color=colours[np.random.randint(3)], linewidth=1)
 
-# image_width = 74  # bricks
-# image_height = int(image_width / aspect_ratio)
-image_width = screen_resolution[0]
-image_height = screen_resolution[1]
+    ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=1, zoom=p["map"]["zoom"])
 
-corners = {
-    "ne": {"lat": -33.575081595647845, "lng": 151.3686975828967},
-    "sw": {"lat": -34.107634411327636, "lng": 150.10678868286178},  # dummy values
-}
+    # Remove axis labels for a clean look
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_frame_on(False)
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    # ax.set_aspect("equal")
+    # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
+    ax.set_aspect(0.974)  # HACK: Fix latitude distortion
 
-width_m = 90000  # 90 km
-sw_lat, sw_lng = calculate_sw_coords(
-    corners["ne"]["lat"], corners["ne"]["lng"], aspect_ratio, width_m
-)
-# print(f"SW Latitude: {sw_lat}, SW Longitude: {sw_lng}")
-corners["sw"]["lat"] = sw_lat
-corners["sw"]["lng"] = sw_lng
+    # fig.savefig("OSM.png")
+    canvas.draw()  # Update the figure
 
-print(corners)
+    # Repeat update every 1000 ms (1 second)
+    root.after(1000, draw_image, keys, p, edges)
 
-bbox = (
-    corners["sw"]["lng"],
-    corners["sw"]["lat"],
-    corners["ne"]["lng"],
-    corners["ne"]["lat"],
-)
 
-custom_filter = '["highway"~"motorway|trunk"]'
+def get_map(p):
+    bbox = (
+        p["map"]["sw"]["lng"],
+        p["map"]["sw"]["lat"],
+        p["map"]["ne"]["lng"],
+        p["map"]["ne"]["lat"],
+    )
 
-# Download the road network from OSM
-print("Downloading the road network from OSM...")
-graph = ox.graph_from_bbox(
-    bbox,
-    custom_filter=custom_filter,
-    simplify=True,
-)
-edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
-# Convert to Web Mercator (needed for Mapbox tiles)
-edges = edges.to_crs(epsg=3857)
+    # Download the road network from OSM
+    print("Downloading the road network from OSM...")
+    graph = ox.graph_from_bbox(
+        bbox,
+        custom_filter=p["osm_filter"],
+        simplify=True,
+    )
 
-# Create a figure
-fig, ax = plt.subplots(figsize=fig_size, dpi=dpi)
+    edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
+    # Convert to Web Mercator (needed for Mapbox tiles)
+    edges = edges.to_crs(epsg=3857)
 
-MAPBOX_STYLE = f"https://api.mapbox.com/styles/v1/{map_id}/tiles/{{z}}/{{x}}/{{y}}{{r}}?access_token={access_token}"
+    # Remove ramps
+    edges = edges[~edges["name"].astype(str).str.contains("ramp", case=False, na=False)]
 
-edges.plot(ax=ax, edgecolor="white", linewidth=1)
-ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=1, zoom=10)
+    # Buffer edges slightly (adjust width as needed)
+    # edges = buffer_to_centerline(edges, buffer_width=10)
 
-# Remove axis labels for a clean look
-ax.set_xticks([])
-ax.set_yticks([])
-ax.set_frame_on(False)
-plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-# ax.set_aspect("equal")
-# ax.set_aspect(np.cos(np.radians(corners["sw"]["lat"])))  # Fix latitude distortion
-ax.set_aspect(0.974)
+    return edges
 
-fig.savefig("OSM_graph.png")
+
+if __name__ == "__main__":
+    # Mapbox API credentials
+    with open("keys.json5") as f:
+        keys = json5.load(f)
+
+    with open("params.json5") as f:
+        p = json5.load(f)
+
+    p = calculate_defaults(p)
+
+    edges = get_map(p)
+
+    # Create root window
+    root = tk.Tk()
+    root.attributes("-fullscreen", True)  # Fullscreen mode
+    root.configure(bg="black")
+    root.bind("<Escape>", lambda e: root.destroy())  # Exit on ESC
+
+    # Create Matplotlib figure
+    fig = plt.figure(1, figsize=p["fig_size"], dpi=p["dpi"])
+    ax = plt.subplot(111)
+    canvas = FigureCanvasTkAgg(fig, master=root)
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    # Pack canvas and set background
+    widget = canvas.get_tk_widget()
+    widget.pack(fill=tk.BOTH, expand=True)
+    widget.configure(bg="black", highlightthickness=0)
+
+    draw_image(keys, p, edges)
+    root.mainloop()

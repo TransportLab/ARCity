@@ -35,7 +35,6 @@ debug = False
 # server_url = "http://localhost:5000/"
 
 
-
 def order_points(pts):
     # initialzie a list of coordinates that will be ordered
     # such that the first entry in the list is the top-left,
@@ -128,9 +127,7 @@ def get_corners(zed, runtime_parameters, N, p):
             # Bitwise-AND mask and original image
             res = cv2.bitwise_and(im, im, mask=mask)
 
-            contours, hierarchy = cv2.findContours(
-                mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-            )
+            contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             cnts = sorted(contours, key=cv2.contourArea)
 
             these_corners = np.zeros([4, 2])
@@ -210,9 +207,7 @@ def initialise_camera():
 
     init_params = sl.InitParameters()
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA
-    init_params.coordinate_units = (
-        sl.UNIT.METER
-    )  # Use meter units (for depth measurements)
+    init_params.coordinate_units = sl.UNIT.METER  # Use meter units (for depth measurements)
     init_params.camera_resolution = sl.RESOLUTION.HD2K
     # init_params.camera_resolution = sl.RESOLUTION.HD720
 
@@ -228,15 +223,13 @@ def initialise_camera():
     # runtime_parameters.sensing_mode = sl.SENSING_MODE.FILL # fill all holes in depth sensing
     runtime_parameters.enable_fill_mode = True
     # Setting the depth confidence parameters
-    runtime_parameters.confidence_threshold = 100  # NOT SURE WHAT THIS DOES
+    runtime_parameters.confidence_threshold = 95  # NOT SURE WHAT THIS DOES
     runtime_parameters.texture_confidence_threshold = 100  # NOT SURE WHAT THIS DOES
 
     return zed, runtime_parameters
 
 
-def get_zed_frame(
-    zed, runtime_parameters, image, depth, corners, grid, colours, heights
-):
+def get_zed_frame(zed, runtime_parameters, image, depth, corners, grid, colours, heights):
     # A new image is available if grab() returns SUCCESS
     if zed.grab(runtime_parameters) == sl.ERROR_CODE.SUCCESS:
         # Retrieve left image
@@ -246,9 +239,7 @@ def get_zed_frame(
         # Retrieve colored point cloud. Point cloud is aligned on the left image.
         # zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
         try:
-            colours, heights = get_warped_data(
-                image, depth, corners, grid, colours, heights
-            )
+            colours, heights = get_warped_data(image, depth, corners, grid, colours, heights)
         except:
             print("Failed to find lego bricks")
             traceback.print_exc(file=sys.stdout)
@@ -305,7 +296,7 @@ def main():
             # remove offset to plane from heights and convert to studs
             # base_offset = (height[0,0] + height[0,-1] + height[-1,0] + height[-1,-1])/4. + 8e-3
             lego = p.base_offset - heights  # pretty bloody unlikely to work
-            lego /= (p.brick_height*1e-3)  # 9.6 mm per stud
+            lego /= p.brick_height * 1e-3  # 9.6 mm per stud
             # print(np.around(lego))
             lego[~np.isfinite(lego)] = 0.0
             lego = lego.astype(np.int64)

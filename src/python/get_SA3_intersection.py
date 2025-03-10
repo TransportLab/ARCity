@@ -5,58 +5,10 @@ import matplotlib.pyplot as plt
 from geopy.distance import geodesic
 import geopandas as gpd
 from shapely.geometry import LineString
+from .simplify_OSM_network import merge_two_edge_nodes
 
 ox.settings.log_console = True
 ox.settings.max_query_area_size = 25000000000
-
-
-def merge_two_edge_nodes(G):
-    """
-    Merges edges where exactly two edges meet at a node.
-
-    Returns:
-        A new NetworkX MultiDiGraph with merged edges.
-    """
-    G = G.copy()
-    nodes_to_remove = []
-
-    for node in list(G.nodes):
-        predecessors = list(G.predecessors(node))
-        successors = list(G.successors(node))
-
-        # Only merge if exactly one predecessor and one successor
-        if len(predecessors) == 1 and len(successors) == 1:
-            u = predecessors[0]
-            v = successors[0]
-
-            # Ensure both edges exist
-            if G.has_edge(u, node) and G.has_edge(node, v):
-                edge1 = G[u][node][0]
-                edge2 = G[node][v][0]
-
-                # Merge geometries
-                new_geometry = LineString(
-                    list(edge1["geometry"].coords) + list(edge2["geometry"].coords)[1:]
-                )
-
-                # Merge attributes, preserving road name and highway type
-                new_attrs = {
-                    "name": edge1.get("name", edge2.get("name", None)),
-                    "highway": edge1.get("highway", edge2.get("highway", None)),
-                    "geometry": new_geometry,
-                }
-
-                # Add the new merged edge
-                G.add_edge(u, v, **new_attrs)
-
-                # Mark node and old edges for removal
-                nodes_to_remove.append(node)
-
-    # Remove merged nodes
-    for node in nodes_to_remove:
-        G.remove_node(node)
-
-    return G
 
 
 def calculate_sw_coords(ne_lat, ne_lng, aspect_ratio, width_m):
@@ -77,15 +29,11 @@ def calculate_sw_coords(ne_lat, ne_lng, aspect_ratio, width_m):
     height_m = width_m / aspect_ratio
 
     # Move south by height_m (latitude change)
-    sw_lat_lng = geodesic(meters=height_m).destination(
-        (ne_lat, ne_lng), 180
-    )  # 180° = due south
+    sw_lat_lng = geodesic(meters=height_m).destination((ne_lat, ne_lng), 180)  # 180° = due south
     sw_lat = sw_lat_lng.latitude  # Extract latitude
 
     # Move west by width_m (longitude change)
-    sw_lat_lng = geodesic(meters=width_m).destination(
-        (sw_lat, ne_lng), 270
-    )  # 270° = due west
+    sw_lat_lng = geodesic(meters=width_m).destination((sw_lat, ne_lng), 270)  # 270° = due west
     sw_lng = sw_lat_lng.longitude  # Extract longitude
 
     return sw_lat, sw_lng
@@ -115,9 +63,7 @@ corners = {
 }
 
 width_m = 90000  # 90 km
-sw_lat, sw_lng = calculate_sw_coords(
-    corners["ne"]["lat"], corners["ne"]["lng"], aspect_ratio, width_m
-)
+sw_lat, sw_lng = calculate_sw_coords(corners["ne"]["lat"], corners["ne"]["lng"], aspect_ratio, width_m)
 # print(f"SW Latitude: {sw_lat}, SW Longitude: {sw_lng}")
 corners["sw"]["lat"] = sw_lat
 corners["sw"]["lng"] = sw_lng
@@ -143,9 +89,7 @@ graph = ox.graph_from_bbox(
 G_proj = ox.projection.project_graph(graph)
 
 # graph = ox.project_graph(graph, to_crs="EPSG:3857")  # Web Mercator projection
-graph = ox.simplification.consolidate_intersections(
-    G_proj, rebuild_graph=True, tolerance=20, dead_ends=True
-)
+graph = ox.simplification.consolidate_intersections(G_proj, rebuild_graph=True, tolerance=20, dead_ends=True)
 print(len(graph))
 graph = ox.simplification.simplify_graph(graph)
 print(len(graph))
@@ -161,17 +105,13 @@ edges = edges.to_crs(epsg=3857)
 # Load SA3 boundaries for Sydney using an open dataset
 # Downloaded from: https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files
 
-sa3_areas = gpd.read_file(
-    "/Users/bmar5496/Downloads/SA3_2021_AUST_SHP_GDA2020/SA3_2021_AUST_GDA2020.shp"
-)
+sa3_areas = gpd.read_file("/Users/bmar5496/Downloads/SA3_2021_AUST_SHP_GDA2020/SA3_2021_AUST_GDA2020.shp")
 
 # Ensure both layers have the same CRS
 sa3_areas = sa3_areas.to_crs(edges.crs)
 
 # Find intersections of SA3 areas with the road network
-sa3_intersections = gpd.overlay(
-    sa3_areas, edges, how="intersection", keep_geom_type=False
-)
+sa3_intersections = gpd.overlay(sa3_areas, edges, how="intersection", keep_geom_type=False)
 
 print(len(sa3_intersections))
 # sa3_intersections.to_file("sa3_road_intersections.geojson", driver="GeoJSON")

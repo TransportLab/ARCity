@@ -1,0 +1,32 @@
+[project]
+name = "ARCity"
+version = "1.0"
+requires-python = ">=3.11"
+authors = [
+  {name = "Benjy Marks", email = "benjy.marks@sydney.edu.au"},
+  {name = "François Guillard", email = "francois.guillard@sydney.edu.au"},
+  {name = "Emily Moylan", email = "emily.moylan@sydney.edu.au"}
+]
+description = "A live city simulator using LEGO"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+keywords = ["LEGO", "smart city", "augmented reality"]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "osmnx",
+    "json5",
+    "json5",
+    "black",
+    "flake8",
+    "contextily",
+    "geopy",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 110
+target-version = ['py311']

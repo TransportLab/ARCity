@@ -32,14 +32,10 @@ corners = {
 center_lng = (corners["ne"]["lng"] + corners["sw"]["lng"]) / 2
 center_lat = (corners["ne"]["lat"] + corners["sw"]["lat"]) / 2
 
-# Calculate the zoom level to cover the bounding box
-# You might need to adjust this manually based on your needs.
-zoom_level = 6.5
-
 # Construct the API request URL
 static_map_url = (
     f"https://api.mapbox.com/styles/v1/{map_id}/static/"
-    f"{center_lng},{center_lat},{zoom_level}/"
+    f"{center_lng},{center_lat},{p["map"]["zoom_level"]}/"
     f"{image_width}x{image_height}?access_token={access_token}&logo=false&attribution=false"
 )
 
