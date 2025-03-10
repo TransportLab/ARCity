@@ -13,7 +13,7 @@ logging.basicConfig(filename="flask_logfile.log", level=logging.DEBUG)
 CORS(app)
 # kiosk = True
 # depths = np.zeros([25,25])
-server_url = "http://localhost:5000"
+server_url = "0.0.0.0:5000"
 kiosk = False
 if kiosk:
     kiosk_string = "--kiosk --disable-pinch --overscroll-history-navigation=0"
@@ -168,7 +168,7 @@ def unhandled_exception(e):
 # flask run
 
 if __name__ == "__main__":
-    app.run(debug=1)
+    app.run(host="0.0.0.0", port=5000, debug=1)
     # main()
 #    sleep(1)
 # main()

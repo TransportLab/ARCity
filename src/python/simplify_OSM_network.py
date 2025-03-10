@@ -1,6 +1,6 @@
 # import osmnx as ox
 import geopandas as gpd
-from centerline.geometry import Centerline
+# from centerline.geometry import Centerline
 
 
 def buffer_to_centerline(edges, buffer_width=10):
