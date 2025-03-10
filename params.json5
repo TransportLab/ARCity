@@ -10,6 +10,8 @@
     // "projector_aspect_ratio" : 1.7777777778, // width/height, 16/9
     projector_plane_distance_mm : 0.0,
     "screen_type": "monitor", // "monitor" or "projector"
+    "screen_resolution": [2560, 1440], // [width, height]
+    "dpi" : 300, // dots per inch, quality for matplotlib rendering
     "block_length" : 8, // one block in LEGO studs
 
     "W" : 72, // width of domain in LEGO studs (x direction)
@@ -27,4 +29,22 @@
 
     "min_speed" : 2, 
     "max_speed" : 3,
+
+    corners : [   // [x, y] in LEGO studs
+        [20, 50], // top left corner
+        [20, 0],  // bottom left corner
+        [70, 0],  // bottom right corner
+        [70, 50], // top right corner
+    ],
+
+    "map" : {
+        "ne": {"lat": -33.575081595647845, "lng": 151.3686975828967},
+        "sw": {"lat": 0, "lng": 0},  // dummy values
+        "width_m" : 90000, // width of the domain in meters, used to set sw corner together with aspect ratio from screen_resolution
+        zoom : 10, // zoom level for basemap
+    },
+    
+    line_width : 0.5, // width of the road on the map
+    osm_filter : '["highway"~"motorway|trunk"]',
+
 }
