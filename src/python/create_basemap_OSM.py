@@ -4,10 +4,12 @@ import json5
 import matplotlib.pyplot as plt
 import contextily as ctx
 from geopy.distance import geodesic
+import scipy.ndimage
 from simplify_OSM_network import buffer_to_centerline, merge_two_edge_nodes
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import requests
+import scipy.signal
 
 ox.settings.log_console = True
 ox.settings.max_query_area_size = 25000000000
@@ -100,32 +102,45 @@ def draw_with_convolved_traffic(keys, p, edges):
     plt.figure(1)
     fg = plt.imread("fg_mask.png")
     fg = fg[:, :, 0]  # Extract one channel
-    fg = fg / 255  # Normalize to [0, 1]
     fg = 1-fg  # Invert mask
+    fg[fg == 0] = np.nan
     bg = plt.imread("bg_mask.png")
+    try:
+        heights = requests.get("http://localhost:5000/get_depths_from_server").json()
+        heights = np.array(heights).reshape((p["H"],p["W"])).T
+        print('GOT HEIGHTS FROM SERVER')
+        print(heights.min(), heights.max())
 
-    heights = requests.get("http://localhost:5000/get_depths_from_server").json()
+        #lego = heights > 0
 
-    lego = heights > 0
-    kernel = gaussian_kernel(5, 1)
+        kernel = gaussian_kernel(5, 1)
 
-    traffic = np.convolve(lego, kernel, mode="same")
-    traffic *= fg  # Apply mask
+        #traffic = scipy.signal.convolve2d(heights, kernel, mode="same", boundary="wrap")
+        # zoom to same size as fg
+        size_ratio = fg.shape[0]/p["W"], fg.shape[1]/p["H"]
+        #traffic_scaled = scipy.ndimage.zoom(traffic, size_ratio)
+        #fg = traffic_scaled*fg  # Apply mask
 
-    plt.imshow(bg, alpha=1)
-    plt.imshow(traffic, cmap="hot", alpha=0.5)
+        heights_scaled = scipy.ndimage.zoom(heights, size_ratio)
+        fg *= heights_scaled
 
-    # Remove axis labels for a clean look
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_frame_on(False)
-    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    # ax.set_aspect("equal")
-    # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
-    ax.set_aspect(0.974)  # HACK: Fix latitude distortion
+        plt.imshow(bg)
+        plt.imshow(fg, cmap="hot", alpha=0.5)
+       # plt.imshow(heights_scaled)
 
-    canvas.draw()  # Update the figure
+        # Remove axis labels for a clean look
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_frame_on(False)
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        # ax.set_aspect("equal")
+        # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
+        ax.set_aspect(0.974)  # HACK: Fix latitude distortion
 
+        canvas.draw()  # Update the figure
+    except Exception as e:
+        print('Got an exception when receiving heights from server:')
+        print(e)
     # Repeat update every 1000 ms (1 second)
     root.after(1000, draw_with_convolved_traffic, keys, p, edges)
 
@@ -163,11 +178,19 @@ def make_mask(p, edges):
     ax = plt.subplot(111)
     MAPBOX_STYLE = f"https://api.mapbox.com/styles/v1/{keys['mapbox']['style']}/tiles/{{z}}/{{x}}/{{y}}{{r}}?access_token={keys['mapbox']['token']}"
 
+    edges.plot(ax=ax, edgecolor="white", linewidth=p["line_width"])
+    #colours = ["red", "green", "orange"]
+    #for i in range(len(edges)):
+    #    edges.iloc[[i]].plot(ax=ax, color=colours[np.random.randint(3)], linewidth=1)
+
     ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=1, zoom=p["map"]["zoom"])
+
     # Remove axis labels for a clean look
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_frame_on(False)
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     # ax.set_aspect("equal")
     # ax.set_aspect(np.cos(np.radians(p["map"]["sw"]["lat"])))  # Fix latitude distortion
@@ -180,12 +203,14 @@ def make_mask(p, edges):
     plt.clf()
     ax = plt.subplot(111)
 
-    ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=0, zoom=p["map"]["zoom"])
+    #ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=0, zoom=p["map"]["zoom"])
     edges.plot(ax=ax, edgecolor="black", linewidth=p["line_width"])
 
     # Remove axis labels for a clean look
     ax.set_xticks([])
     ax.set_yticks([])
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     ax.set_frame_on(False)
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     # ax.set_aspect("equal")
@@ -229,9 +254,9 @@ if __name__ == "__main__":
     widget.pack(fill=tk.BOTH, expand=True)
     widget.configure(bg="black", highlightthickness=0)
 
-    make_mask(fig, p, edges)
+    make_mask(p, edges)
 
     # draw_image(keys, p, edges)
 
-    draw_with_convolved_traffic(p, edges)
+    draw_with_convolved_traffic(keys, p, edges)
     root.mainloop()

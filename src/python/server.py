@@ -78,11 +78,12 @@ colours = [
 ]
 # import read_zed
 nx = 72
-ny = int(nx / (16 / 9))
-depths = np.random.rand(nx, ny)
-colours = np.random.rand(nx, ny)
+ny = 51
+depths = np.zeros([nx, ny]).flatten().tolist()
+colours = np.random.rand(nx, ny).flatten().tolist()
 colours[depths == 0] = 0
-
+#print(depths.shape, colours.shape)
+#print(nx*ny)
 
 @app.route("/")
 # def root():
@@ -122,13 +123,14 @@ def post_zed_data_to_server():
     global depths
     colours = json.loads(request.form["colours"])
     depths = json.loads(request.form["depths"])
-    # print(depths)
+    print("Got depths")
     return "Received colours and depths"
 
 
 @app.route("/get_depths_from_server", methods=["GET"])
 def get_depths_from_server():
     global depths
+    print("Sent depths")
     return json.dumps(depths)
 
 
