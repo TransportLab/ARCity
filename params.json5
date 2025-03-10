@@ -31,10 +31,11 @@
     "max_speed" : 3,
 
     corners : [   // [x, y] in LEGO studs
-        [20, 50], // top left corner
-        [20, 0],  // bottom left corner
-        [70, 0],  // bottom right corner
-        [70, 50], // top right corner
+        [540, 880], // top left corner
+        [540, 1120],  // top right corner
+        [950, 1120], // bottom right corner
+        [950, 880],  // bottom left corner
+        
     ],
 
     "map" : {
@@ -47,4 +48,6 @@
     line_width : 0.5, // width of the road on the map
     osm_filter : '["highway"~"motorway|trunk"]',
 
+    base_offset: 0.6, // offset of the base of the bricks
+    imac_url: "http://192.168.137.134:5000",
 }
