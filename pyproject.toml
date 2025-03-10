@@ -14,13 +14,14 @@ keywords = ["LEGO", "smart city", "augmented reality"]
 dependencies = [
     "numpy",
     "matplotlib",
+    "scipy",
     "osmnx",
-    "json5",
     "json5",
     "black",
     "flake8",
     "contextily",
     "geopy",
+    "opencv-python",
 ]
 
 [build-system]
