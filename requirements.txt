@@ -1,5 +1,0 @@
-flask
-jsonify
-flask_cors
-overpy
-numpy

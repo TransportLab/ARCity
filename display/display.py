@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import contextily as ctx
 from geopy.distance import geodesic
 import scipy.ndimage
-from simplify_OSM_network import buffer_to_centerline, merge_two_edge_nodes
+from simplify import buffer_to_centerline, merge_two_edge_nodes
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import requests
@@ -102,31 +102,31 @@ def draw_with_convolved_traffic(keys, p, edges):
     plt.figure(1)
     fg = plt.imread("fg_mask.png")
     fg = fg[:, :, 0]  # Extract one channel
-    fg = 1-fg  # Invert mask
+    fg = 1 - fg  # Invert mask
     fg[fg == 0] = np.nan
     bg = plt.imread("bg_mask.png")
     try:
         heights = requests.get("http://localhost:5000/get_depths_from_server").json()
-        heights = np.array(heights).reshape((p["H"],p["W"])).T
-        print('GOT HEIGHTS FROM SERVER')
+        heights = np.array(heights).reshape((p["H"], p["W"])).T
+        print("GOT HEIGHTS FROM SERVER")
         print(heights.min(), heights.max())
 
-        #lego = heights > 0
+        # lego = heights > 0
 
         kernel = gaussian_kernel(5, 1)
 
-        #traffic = scipy.signal.convolve2d(heights, kernel, mode="same", boundary="wrap")
+        # traffic = scipy.signal.convolve2d(heights, kernel, mode="same", boundary="wrap")
         # zoom to same size as fg
-        size_ratio = fg.shape[0]/p["W"], fg.shape[1]/p["H"]
-        #traffic_scaled = scipy.ndimage.zoom(traffic, size_ratio)
-        #fg = traffic_scaled*fg  # Apply mask
+        size_ratio = fg.shape[0] / p["W"], fg.shape[1] / p["H"]
+        # traffic_scaled = scipy.ndimage.zoom(traffic, size_ratio)
+        # fg = traffic_scaled*fg  # Apply mask
 
         heights_scaled = scipy.ndimage.zoom(heights, size_ratio)
         fg *= heights_scaled
 
         plt.imshow(bg)
         plt.imshow(fg, cmap="hot", alpha=0.5)
-       # plt.imshow(heights_scaled)
+        # plt.imshow(heights_scaled)
 
         # Remove axis labels for a clean look
         ax.set_xticks([])
@@ -139,7 +139,7 @@ def draw_with_convolved_traffic(keys, p, edges):
 
         canvas.draw()  # Update the figure
     except Exception as e:
-        print('Got an exception when receiving heights from server:')
+        print("Got an exception when receiving heights from server:")
         print(e)
     # Repeat update every 1000 ms (1 second)
     root.after(1000, draw_with_convolved_traffic, keys, p, edges)
@@ -173,14 +173,15 @@ def get_map(p):
 
     return edges
 
+
 def make_mask(p, edges):
     fig = plt.figure(2, figsize=p["fig_size"], dpi=p["dpi"])
     ax = plt.subplot(111)
     MAPBOX_STYLE = f"https://api.mapbox.com/styles/v1/{keys['mapbox']['style']}/tiles/{{z}}/{{x}}/{{y}}{{r}}?access_token={keys['mapbox']['token']}"
 
     edges.plot(ax=ax, edgecolor="white", linewidth=p["line_width"])
-    #colours = ["red", "green", "orange"]
-    #for i in range(len(edges)):
+    # colours = ["red", "green", "orange"]
+    # for i in range(len(edges)):
     #    edges.iloc[[i]].plot(ax=ax, color=colours[np.random.randint(3)], linewidth=1)
 
     ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=1, zoom=p["map"]["zoom"])
@@ -197,13 +198,13 @@ def make_mask(p, edges):
     ax.set_aspect(0.974)  # HACK: Fix latitude distortion
 
     # fig.savefig("OSM.png")
-    
+
     plt.savefig("bg_mask.png", transparent=False)
 
     plt.clf()
     ax = plt.subplot(111)
 
-    #ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=0, zoom=p["map"]["zoom"])
+    # ctx.add_basemap(ax, source=MAPBOX_STYLE, alpha=0, zoom=p["map"]["zoom"])
     edges.plot(ax=ax, edgecolor="black", linewidth=p["line_width"])
 
     # Remove axis labels for a clean look
@@ -218,11 +219,8 @@ def make_mask(p, edges):
     ax.set_aspect(0.974)  # HACK: Fix latitude distortion
 
     # fig.savefig("OSM.png")
-    
+
     plt.savefig("fg_mask.png", transparent=False)
-
-
-
 
 
 if __name__ == "__main__":

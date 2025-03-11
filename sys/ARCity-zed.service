@@ -1,5 +1,5 @@
 [Unit]
-Description=ARCity server startup
+Description=ARCity Read Zed on startup
 Wants=network-online.target
 After=network-online.target
 
@@ -7,7 +7,8 @@ After=network-online.target
 Type=oneshot
 User=arcity
 WorkingDirectory=${ARCITY_PATH}
-ExecStart=${ARCITY_PATH}/display/server.py
+ExecStart=${ARCITY_PATH}/sys/webhook.sh
+ExecStartPost=python ${ARCITY_PATH}/zed/read_zed.py
 RemainAfterExit=yes
 
 [Install]
